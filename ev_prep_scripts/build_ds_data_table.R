@@ -24,15 +24,19 @@ num.species<-vector(mode="numeric",length=length(file.list))
 gacu.ds<-data.frame(gene.id,ds,dn,num.species,stringsAsFactors=FALSE)
 
 for (i in 1:length(file.list)){
+  
   #read in file
   file.con<-file(file.list[i])
   file.lines<-readLines(file.con)
   closeAllConnections()
+  
   if (!is.na(file.lines[2])){  
-    #make the tree
-    num.species<-sapply(strsplit(file.lines[1],split="   "),function(x)x[3])
+    
+    #make the tree(s)
+    num.species<-substr(gsub(" ","",file.lines[1]),1,1)
     ds.tree<-read.tree(text=file.lines[3])
     dn.tree<-read.tree(text=file.lines[5])
+    
     #get gene name and find it in the ds tree
     gene.name<-sapply(strsplit(file.list[i],split=".cml.txt"),function(x)x[1])
     
@@ -52,7 +56,7 @@ for (i in 1:length(file.list)){
       gacu.ds$dn[i]<-dn.tree$edge.length[which.edge(dn.tree,gene.name)]
     }
     
-    gacu.ds$num.species<-num.species
+    gacu.ds$num.species[i]<-num.species
     
     #tracker
     if (i%%1000==0){
