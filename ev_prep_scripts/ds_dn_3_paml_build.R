@@ -17,7 +17,7 @@ home.dir<-"E:/Genome Meta Analysis/ev_prep_scripts/paml_analysis"
 #contains pre-processed paml output (the dn and ds tree lines+first file of paml file)
 #NB: Files MUST be named exactly as the sequence name in the the PAML file
 #e.g. ENSGACP00000014140.cml.txt, and the target branch name in PAML file is "ENSGACP00000014140"
-#script will FAIL if any of the files are missing the matching sequence
+#also script will FAIL if any of the files are missing the matching sequence (somehow this happens)
 #I had to manually remove files with missing sequences
 paml.output.dir<-file.path(home.dir,"output")
 
