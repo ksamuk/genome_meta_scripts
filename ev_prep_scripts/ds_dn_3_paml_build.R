@@ -10,15 +10,20 @@ library(dplyr)
 library(magrittr)
 
 #home dir set up
-#home.dir<-"E:/Genome Meta Analysis/ev_prep_scripts/paml_analysis"
-home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/ev_prep_scripts/paml_analysis"
+home.dir<-"E:/Genome Meta Analysis/ev_prep_scripts/paml_analysis"
+#home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/ev_prep_scripts/paml_analysis"
 #home.dir<-"~/review/analysis/gma/ev_prep_scripts/paml_analysis"
 
 #contains pre-processed paml output (the dn and ds tree lines+first file of paml file)
+#NB: Files MUST be named exactly as the sequence name in the the PAML file
+#e.g. ENSGACP00000014140.cml.txt, and the target branch name in PAML file is "ENSGACP00000014140"
+#script will FAIL if any of the files are missing the matching sequence
+#I had to manually remove files with missing sequences
 paml.output.dir<-file.path(home.dir,"output")
 
 #the output director (window evs)
 out.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/evs/window"
+out.dir<-"E:/Genome Meta Analysis/evs/window"
 
 ########END HEAD
 
@@ -42,7 +47,7 @@ for (i in 1:length(file.list)){
   file.lines<-readLines(file.con)
   closeAllConnections()
   
-  if (!is.na(file.lines[2])){  
+  if ((!is.na(file.lines[2]))){  
     
     #make the tree(s)
     ds.tree<-read.tree(text=file.lines[3])
@@ -83,6 +88,7 @@ for (i in 1:length(file.list)){
 
 gacu.ds<-gacu.ds[complete.cases(gacu.ds),]
 
+
 ########END PROCESS PAML OUTPUT FILES
 
 #####match gene.ids to genomic coordinates
@@ -99,7 +105,7 @@ attributes.feat<-c("ensembl_gene_id",
 
 #query ensembl
 coords<-getBM(attributes=attributes.feat,values=gacu.ds$gene.id,filters=c("ensembl_peptide_id"),mart = ensembl)
-
+coords<-coords[!duplicated(coords$ensembl_peptide_id),]
 ########CLEAN FOR OUTPUT
 
 #the output dataframe
