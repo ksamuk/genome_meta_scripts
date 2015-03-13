@@ -10,8 +10,8 @@ library("IRanges")
 library("dplyr")
 
 #home dir setup
-home.dir<-"E:/Genome Meta Analysis"
-#home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/"
+#home.dir<-"E:/Genome Meta Analysis"
+home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis"
 setwd(home.dir)
 
 #ev dir setup
@@ -96,9 +96,11 @@ for (i in 1:length(ev.files)){
     #add back into df
     overlap.df$ev.avg<- weighted.evs$ev[match(overlap.df$pos1, weighted.evs$pos1)]
     
-    #build output file
-    matched.evs.chr<-data.frame(lg=overlap.df$lg,pos1=overlap.df$pos1,pos2=overlap.df$pos2,ev=overlap.df$ev.avg)
-    matched.evs.chr<-unique(matched.evs.chr)
+    ####DIVERGES FROM SNP BASED ANALYSIS
+    #HACK TO ACCOMODATE WINDOWS re-read stats file
+    stat.chr<-subset(stats.file,stats.file$lg==j)
+    stat.chr$ev<-overlap.df$ev.avg[match(stat.chr$pos1,overlap.df$pos1)]
+    matched.evs.chr<-stat.chr
     
     #rbind to master file
     matched.evs<-rbind(matched.evs,matched.evs.chr)
@@ -107,9 +109,9 @@ for (i in 1:length(ev.files)){
   ###end lg loop
   
   #attach real name of ev and cbind to stats file
-  names(matched.evs)[4]<-sapply(strsplit(ev.files[i],split=".txt"),function(x)x[1])
-  matched.all<-cbind(matched.all,matched.evs[,4])
-  names(matched.all)[length(matched.all)]<-names(matched.evs)[3]
+  names(matched.evs)[7]<-sapply(strsplit(ev.files[i],split=".txt"),function(x)x[1])
+  matched.all<-cbind(matched.all,matched.evs[,7])
+  names(matched.all)[length(matched.all)]<-names(matched.evs)[7]
   
 }
 ###end ev loop

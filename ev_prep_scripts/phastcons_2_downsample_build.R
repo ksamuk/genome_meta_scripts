@@ -24,8 +24,6 @@ file.list<-grep(".csv",value=TRUE,list.files())
 window.size<-75000
 ev.name<-"phastcons"
 
-
-
 #calc windowed stats for each coordinate run
 start<-Sys.time()
 ev.chr.window.list<-list()
@@ -38,7 +36,7 @@ for (i in 1: length(file.list)){
   ev.chr<-data.table(lg=ev.chr$lg,
                      pos1=ev.chr$pos1,
                      pos2=ev.chr$pos2,
-                     window.num,,
+                     window.num,
                      ev=ev.chr[,get(ev.name)])
   
   #summarize windows by window number
@@ -52,7 +50,7 @@ for (i in 1: length(file.list)){
   #calc window boundaries
   window.pos1<-(ev.chr.window$window.num-1)*75000
   window.pos1[window.pos1==0]<-1
-  window.pos2<-(ev.chr.window$window.num)*75000
+  window.pos2<-((ev.chr.window$window.num)*75000)-1
   
   #final ev.chr
   ev.chr.window<-data.frame(lg=i,pos1=window.pos1,pos2=window.pos2,ev=ev.chr.window[,2])
