@@ -12,7 +12,7 @@ pi.file.names<-c("marines.GATK.atl.pi.10000.txt",
                  "marines.GATK.total.filtered.pac.pi.75000.sw.txt")
 
 #file names of output files
-#MUST MATCH ABOVE OR YOU FAIL
+#ORDER MUST MATCH ABOVE OR YOU FAIL
 pi.file.names.out<-c("pi_atl_10k.txt",
                      "pi_pac_10k.txt",
                      "pi_atl_75k.txt",
