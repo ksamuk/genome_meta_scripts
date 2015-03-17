@@ -61,7 +61,7 @@ for (i in 1:length(ev.files)){
     ev.range<-IRanges(start=ev.chr$pos1,end=ev.chr$pos2)
     #minimal set. note that this means overlapping evs end up returning the same value, rather than say, their average
     #(this shouldn't matter for most types of evs)
-    ev.range<-reduce(ev.range)
+    ev.range<-reduce(ev.range,min.gapwidth=0L)
     stat.range<-IRanges(start=stat.chr$pos1,end=stat.chr$pos2)
     
     #find ovelaps amd build an "overlap df"

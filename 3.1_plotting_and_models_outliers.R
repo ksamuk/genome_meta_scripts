@@ -29,13 +29,13 @@ outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 # [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
 
 #pacific marine pi
-ggplot(data=outlier.dat,aes(x=pi_pac_10k,y=dn))+geom_point()#+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=log(pi_pac_10k),y=log(pi_atl_10k)))+geom_point()
 
 #recombination
-ggplot(data=all.data.sub,aes(x=pos,y=recomb_rates))+stat_smooth(span=1)+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=log(dn),y=log(phastcons)))+geom_point()#+facet_wrap(~lg)
 
 #genes
-ggplot(data=all.data.out,aes(x=pos,y=in.a.gene))+geom_smooth()+facet_wrap(~lg)
+ggplot(data=all.data.out,aes(x=pos1,y=in.a.gene))+geom_smooth()+facet_wrap(~lg)
 
 ####END VISUALIZING EVS
 
