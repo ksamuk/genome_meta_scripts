@@ -6,11 +6,11 @@ library("reshape2")
 library("ggplot2")
 library("nlme")
 library("lme4")
-home.dir<-"E:/Genome Meta Analysis"
+home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis"
 setwd(home.dir)
 
 #read in outlier data
-outlier.dat<-read.table(file="outliers_analysis_Mar-16-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
+outlier.dat<-read.table(file="outliers_analysis_Mar-17-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
 
 ####FILTERING EVS
 
@@ -19,6 +19,9 @@ outlier.dat$recomb_rate[outlier.dat$recomb_rate>=25]<-NA
 
 #2. Gene true/false
 outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
+
+#3. KS
+outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
 #### END FILTERING EVS
 
@@ -29,10 +32,12 @@ outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 # [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
 
 #pacific marine pi
-ggplot(data=outlier.dat,aes(x=log(pi_pac_10k),y=log(pi_atl_10k)))+geom_point()
+ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)+ylim(c(0,0.02))+geom_smooth()
+
+ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)
 
 #recombination
-ggplot(data=outlier.dat,aes(x=log(dn),y=log(phastcons)))+geom_point()#+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=log(ds),y=log(phastcons)))+geom_point()#+facet_wrap(~lg)
 
 #genes
 ggplot(data=all.data.out,aes(x=pos1,y=in.a.gene))+geom_smooth()+facet_wrap(~lg)
