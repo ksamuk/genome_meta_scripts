@@ -7,7 +7,6 @@
 rm(list=ls())
 
 library("IRanges")
-library("GenomicRanges")
 library("dplyr")
 
 #home.dir<-"E:/Genome Meta Analysis"
