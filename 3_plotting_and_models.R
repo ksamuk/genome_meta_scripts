@@ -51,6 +51,9 @@ ggplot(data=all.data.out,aes(x=pi_pac_10k,y=pi_atl_10k))+geom_point()+facet_wrap
 #ds vs. pi?
 ggplot(data=all.data.out,aes(x=pi_pac_10k,y=ds))+geom_smooth()+facet_wrap(~lg)
 
+#ds vs. ks
+ggplot(data=all.data.out,aes(x=ks,y=ds))+geom_point()#+facet_wrap(~lg)
+
 #ds vs. pos
 ggplot(data=all.data.out,aes(x=pos,y=ds))+geom_point()+geom_smooth()+facet_wrap(~lg)
 
