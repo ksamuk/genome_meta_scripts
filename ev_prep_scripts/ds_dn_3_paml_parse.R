@@ -137,6 +137,10 @@ gacu.out.ds<-unique(gacu.out.ds)
 gacu.out.dn<-gacu.out.2[,c(3:5,7)]
 gacu.out.dn<-unique(gacu.out.dn)
 
+#FILTERING: no values above 2 (from literature)
+gacu.out.dn<-gacu.out.dn[gacu.out.dn$dn<=2,]
+gacu.out.ds<-gacu.out.ds[gacu.out.ds$ds<=2,]
+
 #write to file
 setwd(out.dir)
 write.table(gacu.out.ds,file="ds.txt",row.names=FALSE)
