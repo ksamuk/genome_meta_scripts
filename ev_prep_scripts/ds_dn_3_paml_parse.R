@@ -23,7 +23,8 @@ file.list<-list.files()
 gene.id<-vector(mode="character",length=length(file.list))
 ds<-vector(mode="numeric",length=length(file.list))
 dn<-vector(mode="numeric",length=length(file.list))
-gacu.dnds<-data.frame(gene.id,ds,dn,stringsAsFactors=FALSE)
+num.sites<-vector(mode="numeric",length=length(file.list))
+gacu.dnds<-data.frame(gene.id,ds,dn,num.sites,stringsAsFactors=FALSE)
 
 #loop through files and extract ds info
 for (i in 1:length(file.list)){
@@ -36,6 +37,17 @@ for (i in 1:length(file.list)){
   #find the "ds tree" line
   ds.tree.line<-grep("dS tree",file.lines)
   
+  #find the "After deleting gaps. " line (for filtering bad alignments)
+  gaps.line<-grep("After deleting gaps. ",file.lines)
+  num.sites<-as.numeric(unlist(strsplit(file.lines[gaps.line],split=" "))[4])
+  
+  #edge case where there are no alignment gaps
+  if(length(num.sites)==0){
+    num.sites<-as.numeric(unlist(strsplit(file.lines[1],split=" ")))
+    num.sites<-num.sites[length(num.sites)]
+  }
+  gacu.dnds$num.sites[i]<-num.sites
+    
   #find gene name from the file name
   gene.name<-sapply(strsplit(file.list[i],split=".cml"),function(x)x[1])
   if(gene.name==""){
@@ -111,7 +123,8 @@ gacu.out<-data.frame(gene.id=coords$ensembl_gene_id,
                      pos1=coords$start_position,
                      pos2=coords$end_position,
                      ds=ds.out,
-                     dn=dn.out)
+                     dn=dn.out,
+                     sites=num.sites)
 
 #if there are multiple peptides from a single gene (~30% of data), take the mean of the ds values
 out.means<-gacu.out%>%
@@ -130,6 +143,12 @@ gacu.out.2$lg<-as.numeric(as.roman(sapply(strsplit(as.character(gacu.out.2$lg),"
 #arrange
 gacu.out.2<-arrange(gacu.out.2,lg)
 
+
+#FILTERING: no dn/dsvalues above 2 (from literature), no genes with <=100 sites
+gacu.out.2<-gacu.out.2[gacu.out.2$sites>=100,]
+gacu.out.2<-gacu.out.2[gacu.out.2$dn<=2,]
+gacu.out.2<-gacu.out.2[gacu.out.2$ds<=2,]
+
 #prep output files (strip duplicates)
 gacu.out.ds<-gacu.out.2[,3:6]
 gacu.out.ds<-unique(gacu.out.ds)
@@ -137,9 +156,6 @@ gacu.out.ds<-unique(gacu.out.ds)
 gacu.out.dn<-gacu.out.2[,c(3:5,7)]
 gacu.out.dn<-unique(gacu.out.dn)
 
-#FILTERING: no values above 2 (from literature)
-gacu.out.dn<-gacu.out.dn[gacu.out.dn$dn<=2,]
-gacu.out.ds<-gacu.out.ds[gacu.out.ds$ds<=2,]
 
 #write to file
 setwd(out.dir)

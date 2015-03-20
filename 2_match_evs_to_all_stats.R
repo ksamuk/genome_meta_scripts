@@ -81,8 +81,10 @@ end.time<-Sys.time()
 print(paste("complete!","matching took",(end.time-start.time),"seconds"))
 print("preview of output file:")
 print(head(matched.all))
+
 setwd(home.dir)
-write.table(matched.all,file="all_stats_all_pops_evs.txt",row.names=FALSE)
+date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
+write.table(matched.all,file=paste("snp_analysis",date.stamp,".txt",sep=""),row.names=FALSE)
 
 
 

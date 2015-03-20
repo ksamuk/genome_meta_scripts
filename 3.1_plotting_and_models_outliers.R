@@ -10,7 +10,7 @@ home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis"
 setwd(home.dir)
 
 #read in outlier data
-outlier.dat<-read.table(file="outliers_analysis_Mar-17-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
+outlier.dat<-read.table(file="outliers_analysis_Mar-19-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
 
 ####FILTERING EVS
 
@@ -32,7 +32,7 @@ outlier.dat$ks[outlier.dat$ks>=1]<-NA
 # [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
 
 #pacific marine pi
-ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)+ylim(c(0,0.02))+geom_smooth()
+ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)
 
 ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)
 
