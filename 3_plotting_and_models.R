@@ -10,7 +10,7 @@ library("lme4")
 home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/"
 setwd(home.dir)
 
-all.data<-read.table(file="snp_analysis_Mar-19-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file="snp_analysis_Mar-20-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
 
 #set negative FSTs to NA
 #this is sketchy, but for now i'm doing it
@@ -52,10 +52,12 @@ ggplot(data=all.data.out,aes(x=pi_pac_10k,y=pi_atl_10k))+geom_point()+facet_wrap
 ggplot(data=all.data.out,aes(x=pi_pac_10k,y=ds))+geom_smooth()+facet_wrap(~lg)
 
 #ds vs. ks FIXED HAHAHAHA
-ggplot(data=all.data.out,aes(x=ks,y=ds))+geom_point()#+facet_wrap(~lg)
+ggplot(data=all.data.out,aes(x=ks,y=ds))+geom_point()+geom_smooth(method="lm")
 
 #ds vs. pos
-ggplot(data=all.data.out,aes(x=pos,y=ds))+geom_point()+geom_smooth()+facet_wrap(~lg)
+ggplot(data=all.data.out,aes(x=pos,y=ds))+geom_point()+geom_point()+facet_wrap(~lg)
+
+ggplot(data=all.data.out,aes(x=pos,y=ds))+geom_point()+stat_smooth(n=5)+facet_wrap(~lg)
 
 #recombination across genome
 ggplot(data=all.data.out,aes(x=pos,y=recomb_rate))+geom_point()+facet_wrap(~lg)
