@@ -10,12 +10,12 @@ library("IRanges")
 library("dplyr")
 
 #home dir setup
-#home.dir<-"E:/Genome Meta Analysis"
-home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis"
+#home.dir<-"E:/Genome Meta Analysis/genome_meta_scripts"
+home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/genome_meta_scripts"
 setwd(home.dir)
 
 #ev dir setup
-ev.dir<-file.path(home.dir,"evs/window")
+ev.dir<-file.path(home.dir,"evs")
 ev.files<-list.files(ev.dir)
 
 #the "stats" file, specifcally an "outlier" file
