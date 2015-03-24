@@ -19,7 +19,6 @@ attributes.feat<-c("start_position",
                     "end_position",
                     "chromosome_name")
 
-
 gene.list.raw<-getBM(attributes=attributes.feat,values="*",mart = gacu.ensembl)
 
 #remove scaffolds
