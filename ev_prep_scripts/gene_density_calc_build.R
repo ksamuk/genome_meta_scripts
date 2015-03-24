@@ -33,12 +33,6 @@ gene.list<-data.frame(lg=gene.list$chromosome_name,pos1=gene.list$start_position
 
 #outputs ev files (ev joining script sorts out % density calculation automagically)
 
-gene.list.out<-gene.list
-gene.list.out$gene.density<-1
-
-#write to file
-write.table(gene.list.out,file=file.path(getwd(),"evs","gene_density.txt"),row.names=FALSE)
-
 ########END BIOMART: GENE LOCATIONS
 
 ########SLIDING WINDOWS OF GENE COUNT
@@ -78,3 +72,53 @@ gene.counts.out<-do.call("rbind",gene.counts.chr)
 write.table(gene.counts.out,file=file.path(getwd(),"evs","gene_count.txt"),row.names=FALSE)
 
 ########END SLIDING WINDOWS OF GENE COUNT
+
+########SLIDING WINDOWS OF GENE DENSITY
+
+#build fake "density" measure
+gene.list.out<-gene.list
+gene.list.out$gene.density<-1
+
+prop.overlap<-list()
+for (i in 1:max(gene.list.out$lg)){
+
+  gene.dens.chr<-subset(gene.list.out,gene.list.out$lg==i)
+  windows.chr<-subset(gene.counts.out,gene.counts.out$lg==i)
+
+  ##from "match_evs_to_outlier_file"
+  
+  ev.range<-IRanges(start= gene.dens.chr$pos1,end= gene.dens.chr$pos2)
+  stat.range<-IRanges(start=windows.chr$pos1,end=windows.chr$pos2)
+  
+  #find ovelaps amd build an "overlap df"
+  overlap<-findOverlaps(stat.range,ev.range,select="all")
+  overlap.df<-data.frame(lg=windows.chr[queryHits(overlap),]$lg,
+                         pos1=windows.chr[queryHits(overlap),]$pos1,
+                         pos2=windows.chr[queryHits(overlap),]$pos2,
+                         gene.start=start(ev.range[subjectHits(overlap)]),
+                         gene.end=end(ev.range[subjectHits(overlap)]),
+                         width=width(ev.range[subjectHits(overlap)]))
+  
+  overlap.df$ev<-ev.chr[subjectHits(overlap),4]
+  overlap.df<-unique(overlap.df)
+  
+  #calculate the proportion of total overlap
+  prop.overlap[[i]]<-overlap.df%>%
+    group_by(pos1)%>%
+    summarise(gene.density=sum(width)/window.size)
+  
+  prop.overlap[[i]]<-data.frame(prop.overlap[[i]])
+  prop.overlap[[i]]<-left_join(prop.overlap[[i]],windows.chr)
+  prop.overlap[[i]]<-select(prop.overlap[[i]],lg,pos1,pos2,gene.density)
+
+}
+
+gene.dens.out<-do.call("rbind",prop.overlap)
+
+head(gene.dens.out)
+tail(gene.dens.out)
+
+#write to file
+write.table(gene.dens.out,file=file.path(getwd(),"evs","gene_density.txt"),row.names=FALSE)
+
+########END SLIDING WINDOWS OF GENE DENSITY

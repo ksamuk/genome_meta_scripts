@@ -11,23 +11,23 @@ library("dplyr")
 
 #home dir setup
 #home.dir<-"E:/Genome Meta Analysis/genome_meta_scripts"
-home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/genome_meta_scripts"
-setwd(home.dir)
+#home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/genome_meta_scripts"
 
 #ev dir setup
-ev.dir<-file.path(home.dir,"evs")
-ev.files<-list.files(ev.dir)
+ev.dir<-file.path(getwd(),"evs")
+
+#stats file
+stats.file<-file.path(getwd(),"outlier_windows","outliers_mar-1-2015.csv")
 
 #the "stats" file, specifcally an "outlier" file
-stats.file<-read.csv(file="outliers_mar-1-2015.csv",header=TRUE)
+stats.file<-read.csv(file=stats.file,header=TRUE)
 #stats.file<-arrange(stats.file,lg,pos1)
 
 ##match evs to statsfile
 ##subsets each by chromosome to prevent mismatches
 
 #find the ev files
-setwd(ev.dir)
-ev.files<-list.files()
+ev.files<-list.files(ev.dir)
 
 #initialize matched data variable
 matched.all<-data.frame(stats.file)
@@ -37,7 +37,7 @@ start.time<-Sys.time()
 for (i in 1:length(ev.files)){
   
   #read ev file
-  ev<-read.table(file=ev.files[i],header=TRUE)
+  ev<-read.table(file=file.path(ev.dir,ev.files[i]),header=TRUE)
   
   #prep empty ev dataframe
   matched.evs<-data.frame()
@@ -123,9 +123,9 @@ print("preview of output file:")
 print(head(matched.all))
 
 #date stamp output file
-setwd(home.dir)
 date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
-write.table(matched.all,file=paste("outliers_analysis",date.stamp,".txt",sep=""),row.names=FALSE)
+file.name<-paste("outliers_analysis",date.stamp,".txt",sep="")
+write.table(matched.all,file=file.path(getwd(),"analysis_ready",file.name),row.names=FALSE)
 
 
 
