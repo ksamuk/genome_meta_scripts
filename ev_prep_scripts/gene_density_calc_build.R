@@ -3,6 +3,8 @@
 ####gene_density = number of genes in the window
 ####    _coverage = proportion of window that is "gene"
 
+#washy washy
+rm(list=ls())
 
 library(rtracklayer)
 library(biomaRt)
@@ -30,8 +32,6 @@ gene.list<-arrange(gene.list,chromosome_name,start_position)
 
 #standard formatting
 gene.list<-data.frame(lg=gene.list$chromosome_name,pos1=gene.list$start_position,pos2=gene.list$end_position)
-
-#outputs ev files (ev joining script sorts out % density calculation automagically)
 
 ########END BIOMART: GENE LOCATIONS
 
@@ -87,7 +87,8 @@ for (i in 1:max(gene.list.out$lg)){
 
   ##from "match_evs_to_outlier_file"
   
-  ev.range<-IRanges(start= gene.dens.chr$pos1,end= gene.dens.chr$pos2)
+  ev.range<-IRanges(start=gene.dens.chr$pos1,end=gene.dens.chr$pos2)
+  ev.range<-reduce(ev.range)
   stat.range<-IRanges(start=windows.chr$pos1,end=windows.chr$pos2)
   
   #find ovelaps amd build an "overlap df"
@@ -96,11 +97,16 @@ for (i in 1:max(gene.list.out$lg)){
                          pos1=windows.chr[queryHits(overlap),]$pos1,
                          pos2=windows.chr[queryHits(overlap),]$pos2,
                          gene.start=start(ev.range[subjectHits(overlap)]),
-                         gene.end=end(ev.range[subjectHits(overlap)]),
-                         width=width(ev.range[subjectHits(overlap)]))
+                         gene.end=end(ev.range[subjectHits(overlap)]))
   
-  overlap.df$ev<-ev.chr[subjectHits(overlap),4]
-  overlap.df<-unique(overlap.df)
+  #truncate overlaps that start before window
+  overlap.df$gene.start[overlap.df$gene.start<overlap.df$pos1]<-overlap.df$pos1[overlap.df$gene.start<overlap.df$pos1]
+  
+  #truncate overlaps that extend past end of window
+  overlap.df$gene.end[overlap.df$gene.end>overlap.df$pos2]<-overlap.df$pos2[overlap.df$gene.end>overlap.df$pos2]
+  
+  #recalc widths
+  overlap.df$width<-(overlap.df$gene.end-overlap.df$gene.start)+1
   
   #calculate the proportion of total overlap
   prop.overlap[[i]]<-overlap.df%>%

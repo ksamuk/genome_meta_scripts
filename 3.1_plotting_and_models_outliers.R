@@ -1,6 +1,5 @@
 #statistical analysis of dvs vs evs
 
-
 library("dplyr")
 library("ggplot2")
 library("Hmisc")
@@ -10,7 +9,7 @@ library("lme4")
 #setwd(home.dir)
 
 outlier.folder<-"analysis_ready"
-outlier.file<-file.path(outlier.folder,"outliers_analysis_Mar-20-2015.txt")
+outlier.file<-file.path(outlier.folder,"outliers_analysis_Mar-24-2015.txt")
 
 #read in outlier data
 outlier.dat<-read.table(file=outlier.file,header=TRUE,na.strings=c("NA","<NA>"))
@@ -28,9 +27,7 @@ outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
 #outlier to logical
 #strips whitespace (...why is there whitespace??) and converts to logical
-
 outlier.dat$outlier<-as.logical(gsub("[[:space:]]", "", as.character(outlier.dat$outlier)))
-
 
 #### END FILTERING EVS
 
@@ -112,7 +109,7 @@ outlier.big$outlier.super<-outlier.big$prop.outlier.scale>=.33 #as above, missin
 outlier.big$outlier.ultra<-outlier.big$prop.outlier.scale>=.60 #as above, missing in any ecotype = NA
 
 #distribution of outliers across the genome
-ggplot(data=outlier.big,aes(x=pos1,y=prop.outlier.scale))+stat_smooth(n=10)+facet_wrap(~lg)
+ggplot(data=outlier.big,aes(x=pos1,y=gene_count))+geom_point()+facet_wrap(~lg)
 
 #ks vs. scaled
 ggplot(data=outlier.big,aes(x=ks,y=prop.outlier.scale))+geom_point()#+facet_wrap(~lg)

@@ -52,6 +52,7 @@ for (i in 1:length(ev.files)){
   ###loop through lgs, matching evs as we god
   for (j in 1:max(stats.file$lg)){
   #for (j in 1:2){
+    
     #subset ev and stat by lg
     ev.chr<-subset(ev,ev$lg==j)
     stat.chr<-subset(stats.file,stats.file$lg==j)
@@ -70,8 +71,16 @@ for (i in 1:length(ev.files)){
                            pos1=stat.chr[queryHits(overlap),]$pos1,
                            pos2=stat.chr[queryHits(overlap),]$pos2,
                            ev.start=start(ev.range[subjectHits(overlap)]),
-                           ev.end=end(ev.range[subjectHits(overlap)]),
-                           width=width(ev.range[subjectHits(overlap)]))
+                           ev.end=end(ev.range[subjectHits(overlap)]))
+    
+    #truncate overlaps that start before window
+    overlap.df$ev.start[overlap.df$ev.start<overlap.df$pos1]<-overlap.df$pos1[overlap.df$ev.start<overlap.df$pos1]
+    
+    #truncate overlaps that extend past end of window
+    overlap.df$ev.end[overlap.df$ev.end>overlap.df$pos2]<-overlap.df$pos2[overlap.df$ev.end>overlap.df$pos2]
+    
+    #calc widths
+    overlap.df$width<-(overlap.df$ev.end-overlap.df$ev.start)+1
     
     overlap.df$ev<-ev.chr[subjectHits(overlap),4]
     overlap.df<-unique(overlap.df)
@@ -110,8 +119,7 @@ for (i in 1:length(ev.files)){
   
   #attach real name of ev and cbind to stats file
   names(matched.evs)[7]<-sapply(strsplit(ev.files[i],split=".txt"),function(x)x[1])
-  matched.all<-cbind(matched.all,matched.evs[,7])
-  names(matched.all)[length(matched.all)]<-names(matched.evs)[7]
+  matched.all<-left_join(matched.all,matched.evs)
   
 }
 ###end ev loop
