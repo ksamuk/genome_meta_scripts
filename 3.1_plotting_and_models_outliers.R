@@ -9,12 +9,12 @@ library("lme4")
 #setwd(home.dir)
 
 outlier.folder<-"analysis_ready"
-outlier.file<-file.path(outlier.folder,"outliers_analysis_Mar-24-2015.txt")
+outlier.file<-file.path(outlier.folder,"outliers_analysis_Mar-25-2015.txt")
 
 #read in outlier data
 outlier.dat<-read.table(file=outlier.file,header=TRUE,na.strings=c("NA","<NA>"))
 
-####FILTERING EVS
+####FILTERING OUTLIER FILE
 
 #1. Recombination distances >25cM
 outlier.dat$recomb_rate[outlier.dat$recomb_rate>=25]<-NA
@@ -25,6 +25,9 @@ outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 #3. KS
 outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
+#3. dS
+outlier.dat$ds[outlier.dat$ds>=1]<-NA
+
 #4. Outlier
 #strips whitespace (...why is there whitespace??) and converts to logical
 outlier.dat$outlier<-as.logical(gsub("[[:space:]]", "", as.character(outlier.dat$outlier)))
@@ -32,8 +35,7 @@ outlier.dat$outlier<-as.logical(gsub("[[:space:]]", "", as.character(outlier.dat
 #5. gene_count
 outlier.dat$gene_count[outlier.dat$gene_count>=20]<-NA
 
-
-#### END FILTERING EVS
+#### END FILTERING
 
 ####VISUALIZING EVS
 
@@ -91,8 +93,6 @@ for (i in 1:length(levels(outlier.dat$ecotype))){
   names(para.out[[i]])[5]<-paste0(levels(outlier.dat$ecotype)[i],"_",names(para.out[[i]])[5])
 }
 
-
-
 #squish together ecotype counts
 #not scaled, do later
 para.df<-left_join(para.out[[1]],para.out[[2]])
@@ -116,32 +116,33 @@ outlier.big$outlier.ultra<-outlier.big$prop.outlier.scale>=.60 #as above, missin
 ggplot(data=outlier.big,aes(x=pos1,y=gene_count))+geom_point()+facet_wrap(~lg)
 
 #ks vs. scaled
-ggplot(data=outlier.big,aes(x=ks,y=prop.outlier.scale))+geom_point()#+facet_wrap(~lg)
+outlier.big%>%
+filter(prop.outlier.scale>0)%>%
+ggplot(data=.)+
+  geom_point(aes(x=pos1,y=prop.outlier.scale*20,color="red"))+
+  geom_point(aes(x=pos1,y=recomb_rate))+
+  facet_wrap(~lg)
 
-ggplot(data=outlier.big,aes(x=ds))+geom_histogram()#+facet_wrap(~lg)
+outlier.big%>%
+  filter(prop.outlier.scale>0)%>%
+    ggplot(data=.)+
+    stat_smooth(aes(x=pos1,y=prop.outlier.scale*15,color="red"),n=20)+
+    stat_smooth(aes(x=pos1,y=recomb_rate),n=20)+
+    facet_wrap(~lg)
+
+outlier.big%>%
+#filter(prop.outlier.scale>0)%>%
+ggplot(data=.,aes(x=recomb_rate))+geom_histogram()#+facet_wrap(~lg)
 
 #recomb rate in outlier vs. not outlier
 ggplot(data=outlier.big,aes(y=recomb_rate,x=outlier.any))+geom_boxplot()#+facet_wrap(~lg)
 
-#only outlier.any==TRUE (nz = no zeroes)
-outlier.big.nz<-subset(outlier.big,outlier.big$outlier.any==TRUE)
-outlier.big.nz$super<-outlier.big.nz$prop.outlier.scale>=.33 #as above, missing in any ecotype = NA
-outlier.big.nz$ultra<-outlier.big.nz$prop.outlier.scale>=.60 #as above, missing in any ecotype = NA
-
-outlier.big.nz$para.fact<-cut2(outlier.big.nz$prop.outlier.scale, g=5)      # quantile groups
-
-outlier.big.nz%>%<-subset(outlier.big,outlier.big$outlier.any==TRUE)
-
-ggplot(data=outlier.big.nz,aes(y=prop.outlier.scale,x=recomb_rate))+
-  geom_point(size=1)+
-  stat_smooth(n=20)
-
-#cut into 5 equal sized groups?
-outlier.big.nz$para.fact<-cut2(outlier.big.nz$prop.outlier.scale, g=20) 
+#cut into equal sized groups?
+outlier.big$para.fact<-as.factor(cut(outlier.big$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
 
 #recomb
-ggplot(data=outlier.big.nz,aes(y=recomb_rate,x=para.fact))+
-  geom_violin()+
+ggplot(data=outlier.big,aes(y=recomb_rate,x=prop.outlier.scale))+
+  geom_point()+
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
 
 #pi
@@ -160,8 +161,9 @@ ggplot(data=outlier.big.nz,aes(y=ks,x=para.fact))+
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
 
 #ks 9sp
-ggplot(data=outlier.big.nz,aes(y=as.numeric(in.a.gene),x=para.fact))+
-  geom_violin()+
+ggplot(data=outlier.big,aes(y=ds,x=prop.outlier.scale))+
+  geom_point()+
+  geom_smooth(method="lm")+
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
 
 
@@ -169,18 +171,14 @@ ggplot(data=outlier.big.nz,aes(y=as.numeric(in.a.gene),x=para.fact))+
 anova(lm(prop.para~recomb_rate,data=outlier.big))
   
 ####LINEAR MODELS
-mod1<-lme(fst~pi_pac_marine+recomb_rates,random=~lg|study,data=all.data,na.action="na.omit")
+mod1<-with(outlier.big,lme(prop.outlier.scale~pi_pac_10k+recomb_rate,random=~1|comparison,na.action="na.omit"))
+
+mod1<-with(outlier.big,lm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate,na.action="na.omit"))
+mod2<-with(outlier.big,lm(prop.outlier.scale~recomb_rate+pi_pac_10k,na.action="na.omit"))
 
 ###EV NAMES
 # [1] "dn"          "ds"          "exon"        "gene_id"     "phastcons"   "pi_atl_10k"  "pi_atl_75k"  "pi_pac_10k" 
 # [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
-
-mod2<-glm(outlier~comparison+recomb_rate+pi_pac_10k+phastcons+in.a.gene,data=outlier.dat,na.action="na.omit",family="binomial")
-
-mod1<-lme(log(fst+1)~in.a.gene,random=~1|pop,data=all.data.out,na.action="na.omit")
-
-ggplot(data=all.data,aes(x=pos,y=fst,color=pop))+geom_smooth()+facet_wrap(~lg)
-ggplot(data=all.data.filt,aes(y=log(pi_pac_marine),x=outlier))+geom_boxplot()
 
 
 
