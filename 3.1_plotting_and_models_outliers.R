@@ -25,9 +25,13 @@ outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 #3. KS
 outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
-#outlier to logical
+#4. Outlier
 #strips whitespace (...why is there whitespace??) and converts to logical
 outlier.dat$outlier<-as.logical(gsub("[[:space:]]", "", as.character(outlier.dat$outlier)))
+
+#5. gene_count
+outlier.dat$gene_count[outlier.dat$gene_count>=20]<-NA
+
 
 #### END FILTERING EVS
 
@@ -46,7 +50,7 @@ ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)+geom_smooth(m
 ggplot(data=outlier.dat,aes(x=log(ds+1),y=log(phastcons+1)))+geom_point()#+facet_wrap(~lg)
 
 #genes
-ggplot(data=all.data.out,aes(x=pos1,y=in.a.gene))+geom_smooth()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pos1,y=gene_density))+geom_smooth()+facet_wrap(~lg)
 
 ####END VISUALIZING EVS
 
