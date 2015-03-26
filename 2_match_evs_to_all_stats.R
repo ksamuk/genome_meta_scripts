@@ -8,13 +8,14 @@ rm(list=ls())
 
 library("IRanges")
 library("dplyr")
+library("readr")
 
-#home.dir<-"E:/Genome Meta Analysis"
-home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/"
-setwd(home.dir)
-ev.dir<-file.path(home.dir,"evs/window")
+
+home.dir<-gsub("/genome_meta_scripts","",getwd())
+
+ev.dir<-file.path(home.dir,"evs")
 ev.files<-list.files(ev.dir)
-stats.file<-read.csv(file="all_stats_all_pops_feb9-2014.csv",header=TRUE)
+stats.file<-read.csv(file=file.path(home.dir,"all_stats_all_pops_feb9-2014.csv"),header=TRUE)
 stats.file<-arrange(stats.file,lg,pos)
 
 
@@ -33,7 +34,7 @@ start.time<-Sys.time()
 for (i in 1:length(ev.files)){
   
   #read ev file
-  ev<-read.table(file=ev.files[i],header=TRUE)
+  ev<-read.table(file=file.path(ev.dir,ev.files[i]),header=TRUE)
   
   #prep empty ev dataframe
   matched.evs<-data.frame()
