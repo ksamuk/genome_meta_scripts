@@ -5,6 +5,7 @@ library("ggplot2")
 library("Hmisc")
 library("nlme")
 library("lme4")
+library("car")
 #home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/genome_meta_scripts"
 #setwd(home.dir)
 
@@ -34,6 +35,9 @@ outlier.dat$outlier<-as.logical(gsub("[[:space:]]", "", as.character(outlier.dat
 
 #5. gene_count
 outlier.dat$gene_count[outlier.dat$gene_count>=20]<-NA
+
+#5. pi
+outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.015]<-NA
 
 #### END FILTERING
 
@@ -109,8 +113,8 @@ outlier.big$num.outlier.all<-rowSums(outlier.big[,grep(".+num.outlier",names(out
 outlier.big$prop.outlier.all<-outlier.big$num.outlier.all/outlier.big$num.obs.all
 outlier.big$prop.outlier.scale<-rowMeans(outlier.big[,grep(".+prop",names(outlier.big))]) #makes any NA = NA
 outlier.big$outlier.any<-outlier.big$prop.outlier.scale!=0 #as above, missing in any ecotype = NA
-outlier.big$outlier.super<-outlier.big$prop.outlier.scale>=.33 #as above, missing in any ecotype = NA
-outlier.big$outlier.ultra<-outlier.big$prop.outlier.scale>=.60 #as above, missing in any ecotype = NA
+outlier.big$outlier.two<-outlier.big$prop.outlier.scale>=.33 #as above, missing in any ecotype = NA
+outlier.big$outlier.three<-outlier.big$prop.outlier.scale>=.66 #as above, missing in any ecotype = NA
 
 #distribution of outliers across the genome
 ggplot(data=outlier.big,aes(x=pos1,y=gene_count))+geom_point()+facet_wrap(~lg)
@@ -126,9 +130,12 @@ ggplot(data=.)+
 outlier.big%>%
   filter(prop.outlier.scale>0)%>%
     ggplot(data=.)+
-    stat_smooth(aes(x=pos1,y=prop.outlier.scale*15,color="red"),n=20)+
-    stat_smooth(aes(x=pos1,y=recomb_rate),n=20)+
+    stat_smooth(aes(x=pos1,y=prop.outlier.scale*20,color="a_parallelism"),n=20)+
+    stat_smooth(aes(x=pos1,y=recomb_rate,color="recombination_rate"),n=20)+
+    stat_smooth(aes(x=pos1,y=pi_pac_10k*500,color="pi_pac_10k"),n=20)+
     facet_wrap(~lg)
+
+
 
 outlier.big%>%
 #filter(prop.outlier.scale>0)%>%
@@ -141,19 +148,32 @@ ggplot(data=outlier.big,aes(y=recomb_rate,x=outlier.any))+geom_boxplot()#+facet_
 outlier.big$para.fact<-as.factor(cut(outlier.big$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
 
 #recomb
-ggplot(data=outlier.big,aes(y=recomb_rate,x=prop.outlier.scale))+
-  geom_point()+
+ggplot(data=outlier.big,aes(y=recomb_rate,x=para.fact))+
+  geom_boxplot()+
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
 
 #pi
-ggplot(data=outlier.big.nz,aes(y=pi_pac_75k,x=para.fact))+
+ggplot(data=outlier.big,aes(y=pi_pac_75k,x=para.fact))+
   geom_violin()+
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
 
-#ds
-ggplot(data=outlier.big.nz,aes(y=ds,x=para.fact))+
-  geom_violin()+
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
+########OUTLIER BAR PLOTS
+outlier.big.red%>%
+  filter(!is.na(para.fact))%>%
+  ggplot(data=.,aes(x=para.fact))+
+    geom_bar()+
+    theme(text=element_text(size=16))+
+    xlab("# comparisons sharing outlier window")+
+    ylab("# of outlier windows")
+
+outlier.big.red%>%
+  filter(!is.na(para.cat))%>%
+  ggplot(data=.,aes(x=as.factor(para.cat)))+
+  geom_bar()+
+  theme(text=element_text(size=16))+
+  xlab("# ecotypes sharing outlier window")+
+  ylab("# of outlier windows")
+
 
 #ks 9sp
 ggplot(data=outlier.big.nz,aes(y=ks,x=para.fact))+
@@ -173,7 +193,9 @@ anova(lm(prop.para~recomb_rate,data=outlier.big))
 ####LINEAR MODELS
 mod1<-with(outlier.big,lme(prop.outlier.scale~pi_pac_10k+recomb_rate,random=~1|comparison,na.action="na.omit"))
 
-mod1<-with(outlier.big,lm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate,na.action="na.omit"))
+mod1<-with(outlier.big,lme(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate*ds,random=~1|pos1,na.action="na.omit"))
+
+mod1<-with(outlier.big,lm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate,,na.action="na.omit"))
 mod2<-with(outlier.big,lm(prop.outlier.scale~recomb_rate+pi_pac_10k,na.action="na.omit"))
 
 ###EV NAMES
@@ -182,6 +204,191 @@ mod2<-with(outlier.big,lm(prop.outlier.scale~recomb_rate+pi_pac_10k,na.action="n
 
 
 
+###NEW DATAFRAME FOR ELIMINATING PSEUDOREPLICATION
+
+tmp<-subset(outlier.big.red,outlier.big$lg==1)
+View(tmp[which(duplicated(tmp$pos1)),])
+
+outlier.big.red<-outlier.big%>%
+  select(-comparison,-ecotype,-outlier,-pos2)%>%
+  distinct()
+
+outlier.big.red$para.fact<-as.factor(cut(outlier.big.red$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
+
+outlier.big.red$para.cat<-as.numeric(outlier.big.red[,4]>0)+as.numeric(outlier.big.red[,7]>0)+as.numeric(outlier.big.red[,10]>0)
+
+#
+mod1<-outlier.big.red%>%
+  filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  with(.,glm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
+anova(mod1)
+Anova(mod1,type=2)
 
 
+mod2<-outlier.big.red%>%
+  filter(lg!=19)%>%
+  with(.,glm(outlier.any~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=binomial))
+Anova(mod2,type=2)
+aov(mod2)
+
+mod3<-outlier.big.red%>%
+  filter(lg!=19)%>%
+  with(.,glm(outlier.any~pi_pac_10k*recomb_rate,na.action="na.omit",family=binomial))
+aov(mod3)
+
+mod3<-outlier.big.red%>%
+  filter(lg!=19)%>%
+  with(.,glm(outlier.any~recomb_rate*pi_pac_10k,na.action="na.omit",family=binomial))
+step(mod3)
+
+#####SCALE PROP PARA VS ALL
+outlier.big.red%>%
+  #filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+    ggplot(data=.)+
+    stat_smooth(aes(x=pos1,y=prop.outlier.scale*20,color="1_parallelism"),n=30,size=1,level=0)+
+    stat_smooth(aes(x=pos1,y=recomb_rate,color="2_recombination"),n=30,size=1,level=0)+
+    stat_smooth(aes(x=pos1,y=pi_pac_10k*750,color="3_pi"),n=30,size=1,level=0)+
+    #stat_smooth(aes(x=pos1,y=phastcons*30,color="phastcons"),n=30,size=1,level=0)+
+    stat_smooth(aes(x=pos1,y=gene_count,color="4_gene_count"),n=30,size=1,level=0)+
+    stat_smooth(aes(x=pos1,y=ds*10,color="5_ds"),n=30,size=1,level=0)+
+    theme(text=element_text(size=16))+
+    xlab("Position (bp)")+
+    ylab("Genomic variable (various units)")+
+    facet_wrap(~lg)
+#####
+
+#####PROB OUTLIER
+outlier.big.red%>%
+  #filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.)+
+  stat_smooth(aes(x=pos1,y=as.numeric(outlier.any)*10,color="1_prob_outlier"),n=30,size=1,level=0)+
+  stat_smooth(aes(x=pos1,y=recomb_rate,color="2_recombination"),n=30,size=1,level=0)+
+  stat_smooth(aes(x=pos1,y=pi_pac_10k*750,color="3_pi"),n=30,size=1,level=0)+
+  #stat_smooth(aes(x=pos1,y=phastcons*30,color="phastcons"),n=30,size=1,level=0)+
+  stat_smooth(aes(x=pos1,y=gene_count,color="4_gene_count"),n=30,size=1,level=0)+
+  stat_smooth(aes(x=pos1,y=ds*10,color="5_ds"),n=30,size=1,level=0)+
+  theme(text=element_text(size=16))+
+  xlab("Position (bp)")+
+  ylab("Genomic variable (various units)")+
+  facet_wrap(~lg)
+#####
+
+#####PROB OUTLIER
+outlier.big.red%>%
+  #filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.)+
+  stat_smooth(aes(x=pos1,y=as.numeric(outlier.any),color="1_prob_outlier"),n=30,size=1,level=0)+
+  #geom_point(aes(x=pos1,y=as.numeric(outlier.any)))+
+  theme(text=element_text(size=16))+
+  xlab("Position (bp)")+
+  ylab("Prob. Outlier")+
+  ylim(c(0,1))+
+  facet_wrap(~lg)
+#####
+
+outlier.big.red%>%
+  #filter(prop.outlier.scale>0)%>%
+  #filter(lg!=19)%>%
+  ggplot(data=.)+
+  geom_point(aes(x=recomb_rate,y=gene_count,color="gene_count"))+
+  geom_point(aes(x=pos1,y=recomb_rate,color="recombination"))
+  #stat_smooth(aes(x=pos1,y=pi_pac_10k*750,color="pi_pac_10k"),n=30,size=1,level=0)+
+  #stat_smooth(aes(x=pos1,y=phastcons*30,color="phastcons"),n=30,size=1,level=0)+
+  #stat_smooth(aes(x=pos1,y=gene_count,color="gene_count"),n=30,size=1,level=0)+
+  #stat_smooth(aes(x=pos1,y=ds*10,color="ds"),n=30,size=1,level=0)+
+
+  facet_wrap(~lg)
+
+########FIGURES
+
+####PROP OUTLIER VS. RECOMB
+outlier.big.red%>%
+  filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.,aes(x=recomb_rate,y=prop.outlier.scale))+
+    geom_point(size=3,alpha=0.5)+
+    stat_smooth(method ="lm",formula=y~log(x),size=1)+
+    #geom_smooth(formula=y~poly(x,3))+
+    theme(text=element_text(size=16))+
+    xlab("Recombination rate (cM/Mb)")+
+    ylab("Scaled prob. outlier")
+
+####PROP OUTLIER VS. PI
+outlier.big.red%>%
+  filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.,aes(x=pi_pac_10k,y=prop.outlier.scale))+
+  geom_point(size=3,alpha=0.5)+
+  geom_smooth(method="lm",formula=y~poly(x,3))+
+  #stat_smooth(n=8,size=1)+
+  theme(text=element_text(size=16))+
+  xlab("Marine nucleotide diversity (pi)")+
+  ylab("Scaled prob. outlier")
+
+####PROP OUTLIER VS. PI
+outlier.big.red%>%
+  #filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.,aes(x=recomb_rate,y=gene_count))+
+  geom_hex()+
+  #geom_smooth(method="lm")+
+  #stat_smooth(n=8,size=1)+
+  theme(text=element_text(size=16))
+  #xlab("Marine nucleotide diversity (pi)")+
+  #ylab("Scaled prob. outlier")
+
+ggplot(data=outlier.big.red,aes(y=recomb_rate,x=as.factor(para.cat)))+
+  geom_boxplot()+
+  theme(text = element_text(size=16))+
+  xlab("Number of ecotypes with outlier")+
+  ylab("Recombination rate (cM/Mb)")
+
+ggplot(data=outlier.big.red,aes(y=pi_pac_10k,x=as.factor(para.cat)))+
+  geom_boxplot()+
+  theme(text = element_text(size=16))+
+  xlab("Number of ecotypes with outlier")+
+  ylab("Marine nucleotide diversity (pi)")
+
+ggplot(data=outlier.big.red,aes(y=ds,x=as.factor(para.cat)))+
+  geom_boxplot()+
+  theme(text = element_text(size=16))+
+  xlab("Number of ecotypes with outlier")+
+  ylab("Mutation rate (dS)")
+
+ggplot(data=outlier.big.red,aes(y=gene_count,x=as.factor(para.cat)))+
+  geom_boxplot()+
+  theme(text = element_text(size=16))+
+  xlab("Number of ecotypes with outlier")+
+  ylab("Gene density (number of genes)")
+
+ggplot(data=outlier.big.red,aes(y=gene_density,x=as.factor(para.cat)))+
+  geom_boxplot()+
+  theme(text = element_text(size=16))+
+  xlab("Number of ecotypes with outlier")+
+  ylab("Gene coverage (% window genic)")
+
+####PROP OUTLIER VS. PI
+outlier.big.red%>%
+  filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.,aes(x=recomb_rate,y=gene_count))+
+  geom_hex()+
+  #geom_smooth(method="lm")+
+  #stat_smooth(n=8,size=1)+
+  theme(text=element_text(size=16))
+#xlab("Marine nucleotide diversity (pi)")+
+#ylab("Scaled prob. outlier")
+
+outlier.big.red%>%
+  filter(prop.outlier.scale>0)%>%
+  filter(lg!=19)%>%
+  ggplot(data=.,aes(x=recomb_rate,y=gene_count))+
+  geom_hex()+
+  #geom_smooth(method="lm")+
+  #stat_smooth(n=8,size=1)+
+  theme(text=element_text(size=16))
 

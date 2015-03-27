@@ -6,11 +6,7 @@ library("ggplot2")
 library("nlme")
 library("lme4")
 
-#home.dir<-"E:/Genome Meta Analysis"
-home.dir<-"~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/"
-setwd(home.dir)
-
-all.data<-read.table(file="snp_analysis_Mar-20-2015.txt",header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","snp_outliers_analysis_Mar-26-2015.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 #set negative FSTs to NA
 #this is sketchy, but for now i'm doing it
@@ -26,50 +22,62 @@ all.data.filt<-all.data%>%
   group_by(pop)%>%
   mutate(outlier=is.outlier(fst))
 
-all.data.out<-data.frame(ungroup(all.data.filt))
+outlier.dat<-data.frame(ungroup(all.data.filt))
 
 ####end magic janky outlier detection with dplyr
 
-####FILTERING EVS
+####FILTERING OUTLIER FILE
 
 #1. Recombination distances >25cM
-all.data.out$recomb_rate[all.data.out$recomb_rate>=25]<-NA
+outlier.dat$recomb_rate[outlier.dat$recomb_rate>=25]<-NA
 
 #2. Gene true/false
-all.data.out$in.a.gene<-as.numeric(!is.na(all.data.out$gene_id))
+outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 
 #3. KS
-all.data.out$ks[all.data.out$ks>=2]<-NA
+outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
-#### END FILTERING EVS
+#3. dS
+outlier.dat$ds[outlier.dat$ds>=1]<-NA
+
+#4. Outlier
+#strips whitespace (...why is there whitespace??) and converts to logical
+outlier.dat$outlier<-as.logical(gsub("[[:space:]]", "", as.character(outlier.dat$outlier)))
+
+#5. gene_count
+all.data.out$gene_count[outlier.dat$gene_count>=20]<-NA
+
+#### END FILTERING
 
 ####VISUALIZING EVS
 
 #pacific marine vs . atl marine pi
-ggplot(data=all.data.out,aes(x=pi_pac_10k,y=pi_atl_10k))+geom_point()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pi_pac_10k,y=pi_atl_10k))+geom_point()+facet_wrap(~lg)
 
 #ds vs. pi?
-ggplot(data=all.data.out,aes(x=pi_pac_10k,y=ds))+geom_smooth()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pi_pac_10k,y=ds))+geom_smooth()+facet_wrap(~lg)
 
 #ds vs. ks FIXED HAHAHAHA
-ggplot(data=all.data.out,aes(x=ks,y=ds))+geom_point()+geom_smooth(method="lm")
+ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point()+geom_smooth(method="lm")
 
 #ds vs. pos
-ggplot(data=all.data.out,aes(x=pos,y=ds))+geom_point()+geom_point()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pos,y=ds))+geom_point()+geom_point()+facet_wrap(~lg)
 
-ggplot(data=all.data.out,aes(x=pos,y=ds))+geom_point()+stat_smooth(n=5)+facet_wrap(~lg)
+ggplot(data=outlier.datt,aes(x=pos,y=ds))+geom_point()+stat_smooth(n=5)+facet_wrap(~lg)
 
 #recombination across genome
-ggplot(data=all.data.out,aes(x=pos,y=recomb_rate))+geom_point()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pos,y=recomb_rate))+geom_point()+facet_wrap(~lg)
 
 #genes
-ggplot(data=all.data.out,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
 
 ####END VISUALIZING EVS
 
 
 ####VISUALIZING EVS VS. FST
-ggplot(data=all.data.out,aes(x=pos,y=fst,color=as.factor(in.a.gene)))+geom_smooth()+facet_wrap(~lg)
+
+outlier.dat
+ggplot(data=outlier.dat,aes(x=pos,y=fst,color=as.factor(in.a.gene)))+geom_smooth()+facet_wrap(~lg)
 
 ggplot(data=all.data.out,aes(x=pos,y=fst,color=in.a.gene))+geom_point()+facet_wrap(~lg)
 

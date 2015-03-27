@@ -8,13 +8,13 @@ rm(list=ls())
 
 library("IRanges")
 library("dplyr")
-library("readr")
+install_github("hadley/readr")
 
 
 home.dir<-gsub("/genome_meta_scripts","",getwd())
 
-ev.dir<-file.path(home.dir,"evs")
-ev.files<-list.files(ev.dir)
+ev.dir<-file.path(getwd(),"evs")
+
 stats.file<-read.csv(file=file.path(home.dir,"all_stats_all_pops_feb9-2014.csv"),header=TRUE)
 stats.file<-arrange(stats.file,lg,pos)
 
@@ -23,8 +23,7 @@ stats.file<-arrange(stats.file,lg,pos)
 ##subsets each by chromosome to prevent mismatches
 
 #find the ev files
-setwd(ev.dir)
-ev.files<-list.files()
+ev.files<-list.files(ev.dir)
 
 #initialize matched data variable
 matched.all<-data.frame(stats.file)
@@ -83,9 +82,9 @@ print(paste("complete!","matching took",(end.time-start.time),"seconds"))
 print("preview of output file:")
 print(head(matched.all))
 
-setwd(home.dir)
 date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
-write.table(matched.all,file=paste("snp_analysis",date.stamp,".txt",sep=""),row.names=FALSE)
+file.name<-paste("snp_outliers_analysis",date.stamp,".gz",sep="")
+write.table(matched.all,file=gzfile(file.path(getwd(),"analysis_ready",file.name)),row.names=FALSE)
 
 
 
