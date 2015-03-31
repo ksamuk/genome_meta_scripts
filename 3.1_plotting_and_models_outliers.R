@@ -41,41 +41,7 @@ outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.015]<-NA
 
 #### END FILTERING
 
-####VISUALIZING EVS
-
-###EV NAMES
-# [1] "dn"          "ds"          "exon"        "gene_id"     "phastcons"   "pi_atl_10k"  "pi_atl_75k"  "pi_pac_10k" 
-# [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
-
-#ks vs ds (no relationship)
-ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=1)
-
-ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)+geom_smooth(method="lm")
-
-#recombination
-ggplot(data=outlier.dat,aes(x=log(ds+1),y=log(phastcons+1)))+geom_point()#+facet_wrap(~lg)
-
-#genes
-ggplot(data=outlier.dat,aes(x=pos1,y=gene_density))+geom_smooth()+facet_wrap(~lg)
-
-####END VISUALIZING EVS
-
-
-####VISUALIZING EVS VS. FST
-ggplot(data=outlier.dat,aes(x=pos1,as,y=as.numeric(outlier),color=ecotype))+stat_smooth(n=20)+facet_wrap(~lg)
-
-ggplot(data=all.data.out,aes(x=pos,y=fst,color=in.a.gene))+geom_point()+facet_wrap(~lg)
-
-ggplot(data=all.data.out,aes(y=pi_pac_marine,x=as.factor(in.a.gene)))+geom_boxplot()
-
-ggplot(data=all.data.out,aes(x=recomb_rates))+geom_histogram()+facet_wrap(~in.a.gene)
-
-ggplot(data=all.data.out,aes(x=as.factor(in.a.gene),y=recomb_rates))+geom_boxplot()
-
-summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
-
-
-####THE CATEGORICAL APPROACH
+####REFORMATTING FOR OUTLIER COUNTS (i.e. WIDE FORMAT)
 #for each snp, calculate parallelism within and between all ecotypes
 #collapse this into a not parallel, parallel, super parallel measure
 #NB: MAKE SURE OUTLIER IS STRIPPED OF WHITESPACE AND IS LOGICAL (in filter section above)
@@ -113,134 +79,49 @@ outlier.big$num.outlier.all<-rowSums(outlier.big[,grep(".+num.outlier",names(out
 outlier.big$prop.outlier.all<-outlier.big$num.outlier.all/outlier.big$num.obs.all
 outlier.big$prop.outlier.scale<-rowMeans(outlier.big[,grep(".+prop",names(outlier.big))]) #makes any NA = NA
 outlier.big$outlier.any<-outlier.big$prop.outlier.scale!=0 #as above, missing in any ecotype = NA
-outlier.big$outlier.two<-outlier.big$prop.outlier.scale>=.33 #as above, missing in any ecotype = NA
-outlier.big$outlier.three<-outlier.big$prop.outlier.scale>=.66 #as above, missing in any ecotype = NA
 
-#distribution of outliers across the genome
-ggplot(data=outlier.big,aes(x=pos1,y=gene_count))+geom_point()+facet_wrap(~lg)
+####END REFORMATTING FOR OUTLIER COUNTS (i.e. WIDE FORMAT)
 
-#ks vs. scaled
-outlier.big%>%
-filter(prop.outlier.scale>0)%>%
-ggplot(data=.)+
-  geom_point(aes(x=pos1,y=prop.outlier.scale*20,color="red"))+
-  geom_point(aes(x=pos1,y=recomb_rate))+
-  facet_wrap(~lg)
-
-outlier.big%>%
-  filter(prop.outlier.scale>0)%>%
-    ggplot(data=.)+
-    stat_smooth(aes(x=pos1,y=prop.outlier.scale*20,color="a_parallelism"),n=20)+
-    stat_smooth(aes(x=pos1,y=recomb_rate,color="recombination_rate"),n=20)+
-    stat_smooth(aes(x=pos1,y=pi_pac_10k*500,color="pi_pac_10k"),n=20)+
-    facet_wrap(~lg)
-
-
-
-outlier.big%>%
-#filter(prop.outlier.scale>0)%>%
-ggplot(data=.,aes(x=recomb_rate))+geom_histogram()#+facet_wrap(~lg)
-
-#recomb rate in outlier vs. not outlier
-ggplot(data=outlier.big,aes(y=recomb_rate,x=outlier.any))+geom_boxplot()#+facet_wrap(~lg)
-
-#cut into equal sized groups?
-outlier.big$para.fact<-as.factor(cut(outlier.big$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
-
-#recomb
-ggplot(data=outlier.big,aes(y=recomb_rate,x=para.fact))+
-  geom_boxplot()+
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
-
-#pi
-ggplot(data=outlier.big,aes(y=pi_pac_75k,x=para.fact))+
-  geom_violin()+
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
-
-########OUTLIER BAR PLOTS
-outlier.big.red%>%
-  filter(!is.na(para.fact))%>%
-  ggplot(data=.,aes(x=para.fact))+
-    geom_bar()+
-    theme(text=element_text(size=16))+
-    xlab("# comparisons sharing outlier window")+
-    ylab("# of outlier windows")
-
-outlier.big.red%>%
-  filter(!is.na(para.cat))%>%
-  ggplot(data=.,aes(x=as.factor(para.cat)))+
-  geom_bar()+
-  theme(text=element_text(size=16))+
-  xlab("# ecotypes sharing outlier window")+
-  ylab("# of outlier windows")
-
-
-#ks 9sp
-ggplot(data=outlier.big.nz,aes(y=ks,x=para.fact))+
-  geom_violin()+
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
-
-#ks 9sp
-ggplot(data=outlier.big,aes(y=ds,x=prop.outlier.scale))+
-  geom_point()+
-  geom_smooth(method="lm")+
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
-
-
-
-anova(lm(prop.para~recomb_rate,data=outlier.big))
-  
-####LINEAR MODELS
-mod1<-with(outlier.big,lme(prop.outlier.scale~pi_pac_10k+recomb_rate,random=~1|comparison,na.action="na.omit"))
-
-mod1<-with(outlier.big,lme(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate*ds,random=~1|pos1,na.action="na.omit"))
-
-mod1<-with(outlier.big,lm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate,,na.action="na.omit"))
-mod2<-with(outlier.big,lm(prop.outlier.scale~recomb_rate+pi_pac_10k,na.action="na.omit"))
+#########################LINEAR MODELS###############################
 
 ###EV NAMES
 # [1] "dn"          "ds"          "exon"        "gene_id"     "phastcons"   "pi_atl_10k"  "pi_atl_75k"  "pi_pac_10k" 
 # [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
 
-
-
-###NEW DATAFRAME FOR ELIMINATING PSEUDOREPLICATION
-
-tmp<-subset(outlier.big.red,outlier.big$lg==1)
-View(tmp[which(duplicated(tmp$pos1)),])
+###NEW DATAFRAME FOR ELIMINATING PSEUDOREPLICATION (due to long -> wide reformat above, each window shows up many times)
 
 outlier.big.red<-outlier.big%>%
   select(-comparison,-ecotype,-outlier,-pos2)%>%
   distinct()
 
 outlier.big.red$para.fact<-as.factor(cut(outlier.big.red$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
-
 outlier.big.red$para.cat<-as.numeric(outlier.big.red[,4]>0)+as.numeric(outlier.big.red[,7]>0)+as.numeric(outlier.big.red[,10]>0)
 
-#
+####prop.outlier.scale model
 mod1<-outlier.big.red%>%
   filter(prop.outlier.scale>0)%>%
   filter(lg!=19)%>%
   with(.,glm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
+
+#type 1 ANOVA
 anova(mod1)
+
+#type 2 ANOVA
 Anova(mod1,type=2)
 
-
+####outlier.any model
 mod2<-outlier.big.red%>%
   filter(lg!=19)%>%
-  with(.,glm(outlier.any~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=binomial))
+  with(.,glm(outlier.any~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
+
+#type 1 ANOVA
+anova(mod2)
+
+#type 2 ANOVA
 Anova(mod2,type=2)
 aov(mod2)
 
-mod3<-outlier.big.red%>%
-  filter(lg!=19)%>%
-  with(.,glm(outlier.any~pi_pac_10k*recomb_rate,na.action="na.omit",family=binomial))
-aov(mod3)
-
-mod3<-outlier.big.red%>%
-  filter(lg!=19)%>%
-  with(.,glm(outlier.any~recomb_rate*pi_pac_10k,na.action="na.omit",family=binomial))
-step(mod3)
+##################PARALLELISM PLOTS######################
 
 #####SCALE PROP PARA VS ALL
 outlier.big.red%>%
@@ -303,7 +184,7 @@ outlier.big.red%>%
 
   facet_wrap(~lg)
 
-########FIGURES
+#########################VISUALIZING PARALLELISM (WORK IN PROGRESS)###############################
 
 ####PROP OUTLIER VS. RECOMB
 outlier.big.red%>%
@@ -391,4 +272,109 @@ outlier.big.red%>%
   #geom_smooth(method="lm")+
   #stat_smooth(n=8,size=1)+
   theme(text=element_text(size=16))
+
+#########################VISUALIZING EVS (WORK IN PROGRESS)###############################
+
+####VISUALIZING EVS
+
+###EV NAMES
+# [1] "dn"          "ds"          "exon"        "gene_id"     "phastcons"   "pi_atl_10k"  "pi_atl_75k"  "pi_pac_10k" 
+# [9] "pi_pac_75k"  "recomb_rate" "utr3"        "utr5"        "in.a.gene"  
+
+#ks vs ds (no relationship)
+ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=1)
+
+ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point(alpha=1,size=2)+geom_smooth(method="lm")
+
+#recombination
+ggplot(data=outlier.dat,aes(x=log(ds+1),y=log(phastcons+1)))+geom_point()#+facet_wrap(~lg)
+
+#genes
+ggplot(data=outlier.dat,aes(x=pos1,y=gene_density))+geom_smooth()+facet_wrap(~lg)
+
+####END VISUALIZING EVS
+
+
+####VISUALIZING EVS VS. FST
+ggplot(data=outlier.dat,aes(x=pos1,as,y=as.numeric(outlier),color=ecotype))+stat_smooth(n=20)+facet_wrap(~lg)
+
+ggplot(data=all.data.out,aes(x=pos,y=fst,color=in.a.gene))+geom_point()+facet_wrap(~lg)
+
+ggplot(data=all.data.out,aes(y=pi_pac_marine,x=as.factor(in.a.gene)))+geom_boxplot()
+
+ggplot(data=all.data.out,aes(x=recomb_rates))+geom_histogram()+facet_wrap(~in.a.gene)
+
+ggplot(data=all.data.out,aes(x=as.factor(in.a.gene),y=recomb_rates))+geom_boxplot()
+
+#distribution of outliers across the genome
+ggplot(data=outlier.big,aes(x=pos1,y=gene_count))+geom_point()+facet_wrap(~lg)
+
+#ks vs. scaled
+outlier.big%>%
+  filter(prop.outlier.scale>0)%>%
+  ggplot(data=.)+
+  geom_point(aes(x=pos1,y=prop.outlier.scale*20,color="red"))+
+  geom_point(aes(x=pos1,y=recomb_rate))+
+  facet_wrap(~lg)
+
+outlier.big%>%
+  filter(prop.outlier.scale>0)%>%
+  ggplot(data=.)+
+  stat_smooth(aes(x=pos1,y=prop.outlier.scale*20,color="a_parallelism"),n=20)+
+  stat_smooth(aes(x=pos1,y=recomb_rate,color="recombination_rate"),n=20)+
+  stat_smooth(aes(x=pos1,y=pi_pac_10k*500,color="pi_pac_10k"),n=20)+
+  facet_wrap(~lg)
+
+outlier.big%>%
+  #filter(prop.outlier.scale>0)%>%
+  ggplot(data=.,aes(x=recomb_rate))+geom_histogram()#+facet_wrap(~lg)
+
+#recomb rate in outlier vs. not outlier
+ggplot(data=outlier.big,aes(y=recomb_rate,x=outlier.any))+geom_boxplot()#+facet_wrap(~lg)
+
+#cut into equal sized groups?
+outlier.big$para.fact<-as.factor(cut(outlier.big$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
+
+#recomb
+ggplot(data=outlier.big,aes(y=recomb_rate,x=para.fact))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
+
+#pi
+ggplot(data=outlier.big,aes(y=pi_pac_75k,x=para.fact))+
+  geom_violin()+
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
+
+########OUTLIER BAR PLOTS
+outlier.big.red%>%
+  filter(!is.na(para.fact))%>%
+  ggplot(data=.,aes(x=para.fact))+
+  geom_bar()+
+  theme(text=element_text(size=16))+
+  xlab("# comparisons sharing outlier window")+
+  ylab("# of outlier windows")
+
+outlier.big.red%>%
+  filter(!is.na(para.cat))%>%
+  ggplot(data=.,aes(x=as.factor(para.cat)))+
+  geom_bar()+
+  theme(text=element_text(size=16))+
+  xlab("# ecotypes sharing outlier window")+
+  ylab("# of outlier windows")
+
+
+#ks 9sp
+ggplot(data=outlier.big.nz,aes(y=ks,x=para.fact))+
+  geom_violin()+
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
+
+#ks 9sp
+ggplot(data=outlier.big,aes(y=ds,x=prop.outlier.scale))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.25))
+
+
+
+anova(lm(prop.para~recomb_rate,data=outlier.big))
 
