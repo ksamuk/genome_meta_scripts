@@ -1,10 +1,11 @@
-##filters and binds stats files into master file
-##filters out invariant sites, binds all dataframes together
-##filters out sites with <50% representation across dataset
-##outputs to new dir "stats_filtered"
+#####filters and binds stats files into master file
+####filters out invariant sites
+####outputs to new dir "stats_filtered"
+#####KS Feb 2015
 
-library("dplyr")
-library("data.table")
+#required libraries
+require("dplyr")
+require("data.table")
 
 #roman to numeric function for lg naming 
 chrom.to.num<-function(x){
@@ -24,7 +25,7 @@ filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*.txt"))
 #output file name and directory and with data stamp
 dir.create(file.path(stats.dir, "stats_filtered"), showWarnings = FALSE)
 date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
-out.file.name<-file.path(stats.dir, "stats_filtered",paste("stats_master_invariant",date.stamp,".txt",sep=""))
+out.file.name<-file.path(stats.dir, "stats_filtered",paste("stats_master_variant",date.stamp,".txt",sep=""))
 
 #filters out invariant sites and reformats for rbinding
 filter.fsts<-function(x){
@@ -32,7 +33,7 @@ filter.fsts<-function(x){
   print(paste("Processing",x,"..."))
   matched.file<-fread(x,header=TRUE)
   
-  ##activate to filter invariant sites
+  ##filter invariant sites
   matched.file<-matched.file[!is.na(matched.file$Fst),]
   matched.file<-matched.file[!matched.file$Fst==Inf,]
   

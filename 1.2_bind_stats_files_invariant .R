@@ -1,10 +1,11 @@
-##filters and binds stats files into master file
-##filters out invariant sites, binds all dataframes together
-##filters out sites with <50% representation across dataset
-##outputs to new dir "stats_filtered"
+#####filters and binds stats files into master file
+#####keeps invariant sites
+#####KS Feb 2015
+#####outputs to new dir "stats_filtered"
 
-library("dplyr")
-library("data.table")
+
+require("dplyr")
+require("data.table")
 
 #roman to numeric function for lg naming 
 chrom.to.num<-function(x){
@@ -17,9 +18,6 @@ stats.dir<-"/Users/Kieran/Documents/Science/Projects/Ph.D./Genome Meta Analysis/
 
 #read in file names
 filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*.txt"))
-
-#headers for the bound file
-#column.names<-sapply(strsplit(list.files(stats.dir,pattern="*.txt")),"_"), function(x) x[1:2])
 
 #output file name and directory and with data stamp
 dir.create(file.path(stats.dir, "stats_filtered"), showWarnings = FALSE)
