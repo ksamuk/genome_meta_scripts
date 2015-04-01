@@ -95,13 +95,21 @@ outlier.big.red<-outlier.big%>%
   distinct()
 
 outlier.big.red$para.fact<-as.factor(cut(outlier.big.red$prop.outlier.scale, breaks=c(seq(0,1,by=0.1))))
+
+#para.cat: number of ecotypes with a paralell outlier at that locus in at least one comparison
 outlier.big.red$para.cat<-as.numeric(outlier.big.red[,4]>0)+as.numeric(outlier.big.red[,7]>0)+as.numeric(outlier.big.red[,10]>0)
+
+#prop.outlier.all: proportion of comparisons (any ecotype) with an outlier
+
+#prop.outlier.scale: average proportion of parallel outliers within ecotypes (1=outlier in all comparisons, 0= in none)
+
+#para.
 
 ####prop.outlier.scale model
 mod1<-outlier.big.red%>%
   filter(prop.outlier.scale>0)%>%
   filter(lg!=19)%>%
-  with(.,glm(prop.outlier.scale~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
+  with(.,glm(prop.outlier.scale~gene_density*gene_count*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
 
 #type 1 ANOVA
 anova(mod1)
@@ -112,7 +120,7 @@ Anova(mod1,type=2)
 ####outlier.any model
 mod2<-outlier.big.red%>%
   filter(lg!=19)%>%
-  with(.,glm(outlier.any~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
+  with(.,glm(outlier.any~gene_density*gene_count*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=quasibinomial))
 
 #type 1 ANOVA
 anova(mod2)
@@ -120,6 +128,8 @@ anova(mod2)
 #type 2 ANOVA
 Anova(mod2,type=2)
 aov(mod2)
+
+
 
 ##################PARALLELISM PLOTS######################
 
@@ -192,7 +202,8 @@ outlier.big.red%>%
   filter(lg!=19)%>%
   ggplot(data=.,aes(x=recomb_rate,y=prop.outlier.scale))+
     geom_point(size=3,alpha=0.5)+
-    stat_smooth(method ="lm",formula=y~log(x),size=1)+
+    #stat_smooth(method ="lm",formula=y~log(x),size=1)+
+    stat_smooth(method ="loess",n=5)+
     #geom_smooth(formula=y~poly(x,3))+
     theme(text=element_text(size=16))+
     xlab("Recombination rate (cM/Mb)")+
@@ -222,11 +233,30 @@ outlier.big.red%>%
   #xlab("Marine nucleotide diversity (pi)")+
   #ylab("Scaled prob. outlier")
 
-ggplot(data=outlier.big.red,aes(y=recomb_rate,x=as.factor(para.cat)))+
+ggplot(data=outlier.big.red,aes(y=log(recomb_rate),x=as.factor(para.cat)))+
   geom_boxplot()+
   theme(text = element_text(size=16))+
   xlab("Number of ecotypes with outlier")+
-  ylab("Recombination rate (cM/Mb)")
+  ylab("Recombination rate (cM/Mb)")+
+  facet_wrap(~lg)
+
+ggplot(data=outlier.big.red,aes(y=log(recomb_rate),x=prop.outlier.all))+
+  geom_point()+
+  geom_smooth(method="lm")+
+  theme(text = element_text(size=16))+
+  xlab("Number of ecotypes with outlier")+
+  ylab("Recombination rate (cM/Mb)")+
+  facet_wrap(~lg)
+
+####model
+mod1<-outlier.big.red%>%
+  filter(lg!=19)%>%
+  with(.,lm(log(recomb_rate)~as.factor(para.cat),na.action="na.omit"))
+
+summary(mod1)
+
+#type 1 ANOVA
+anova(mod1)
 
 ggplot(data=outlier.big.red,aes(y=pi_pac_10k,x=as.factor(para.cat)))+
   geom_boxplot()+
@@ -264,6 +294,8 @@ outlier.big.red%>%
 #xlab("Marine nucleotide diversity (pi)")+
 #ylab("Scaled prob. outlier")
 
+
+
 outlier.big.red%>%
   filter(prop.outlier.scale>0)%>%
   filter(lg!=19)%>%
@@ -272,6 +304,10 @@ outlier.big.red%>%
   #geom_smooth(method="lm")+
   #stat_smooth(n=8,size=1)+
   theme(text=element_text(size=16))
+
+#########################PROP ON PROP PLOT(WORK IN PROGRESS)###############################
+
+
 
 #########################VISUALIZING EVS (WORK IN PROGRESS)###############################
 

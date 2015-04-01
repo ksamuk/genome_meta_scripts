@@ -3,23 +3,17 @@
 ##filters out sites with <50% representation across dataset
 
 ##run in matched file folder R CMD BATCH filter_fsts.R 
-##outputs to new dir "filtered"
+##outputs to new dir "stats_filtered"
 
-library("plyr")
 library("dplyr")
-library("reshape2")
 
-#WINDOWS
-stats.dir<-"E:/Genome Meta Analysis/stats"
+#the directory holding the stats files
+stats.dir<-"/Users/Kieran/Documents/Science/Projects/Ph.D./Genome Meta Analysis/stats"
 
-#CLUSTER
-stats.dir<-"/Newdisk/SciBorg/array0/samuk/review/analysis/gma/stats"
-
-setwd(stats.dir)
-filenames<-list.files(pattern="*.txt")
+filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*.txt"))
 column.names<-sapply(strsplit(filenames,"_"), function(x) x[1:2])
 
-dir.create(file.path(getwd(), "stats_filtered"), showWarnings = FALSE)
+dir.create(file.path(stats.dir, "stats_filtered"), showWarnings = FALSE)
 
 #filters out invariant sites and reformats for rbinding
 filter.fsts<-function(x){
@@ -58,8 +52,10 @@ df.out2<-df.out[-grep("scaffold*",df.out$lg),]
 #rename lgs as numeric
 df.out2$lg<-as.numeric(as.roman(sapply(strsplit(as.character(df.out2$lg),split="group"),function(x)x[2])))
 
-#write to file
-write.table(df.out2,file=paste(file.path(getwd(),"stats_filtered"),"/stats_all_pops.txt",sep=""),row.names=FALSE)
+#write to file with date stamp
+date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
+file.name<-paste("stats_master",date.stamp,".txt",sep="")
+write.table(df.out2,file=paste(file.path(stats.dir,"stats_filtered"),file.name,sep=""),row.names=FALSE)
 
 
   
