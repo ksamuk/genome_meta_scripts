@@ -42,5 +42,5 @@ for (i in 1:length(id.lines)){
   hap.df<-rbind(hap.df,hap.df.tmp)
 }
 
-ggplot(data=hap.df,aes(xmin=pos,xmax=pos+1,ymin=0,ymax=0.5,color=state))+geom_rect()+facet_wrap(~id)
+ggplot(data=hap.df,aes(xmin=pos,xmax=pos+1,ymin=0,ymax=0.5,color=state))+geom_rect()+facet_wrap(~id+hap)
 
