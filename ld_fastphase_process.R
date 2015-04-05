@@ -1,6 +1,7 @@
 #fastphase formatting script
 
 library(ggplot2)
+library(RColorBrewer)
 
 closeAllConnections()
 rm(list=ls())
@@ -32,6 +33,8 @@ closeAllConnections()
 
 #assumes id lines are indicated by a '#'
 id.lines<-grep("#",hap.lines)
+
+#convert read lines into dataframe
 hap.df<-data.frame()
 for (i in 1:length(id.lines)){
   id<-gsub("# ","",hap.lines[id.lines[i]])
@@ -42,5 +45,15 @@ for (i in 1:length(id.lines)){
   hap.df<-rbind(hap.df,hap.df.tmp)
 }
 
-ggplot(data=hap.df,aes(xmin=pos,xmax=pos+1,ymin=0,ymax=0.5,color=state))+geom_rect()+facet_wrap(~id+hap)
+#blue/red palatte
+cbPalette<-c("#CCCCCC","#FF3300","#3300CC")
+
+#blue/orange palatte
+cbPalette<-c("#CCCCCC","#FF9900","#3399FF")
+
+#plot chromosomes with ggplot
+ggplot(data=hap.df,aes(xmin=pos,xmax=pos+0.25,ymin=((as.numeric(id)/4)+(hap/10)),ymax=((as.numeric(id)/4)+(hap/10)+0.07),color=state))+
+  geom_rect()+
+  scale_color_manual(values=cbPalette)+
+  theme_classic()
 
