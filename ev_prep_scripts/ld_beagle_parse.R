@@ -6,7 +6,7 @@ library("dplyr")
 library("data.table")
 
 #the phased vcf file
-vcf.file <- file("ev_prep_scripts/beagle/groupI_beagle.vcf.gz")
+vcf.file <- file("ev_prep_scripts/beagle/IBD_groupIV_beagle.vcf.gz")
 vcf <- readLines(vcf.file)
 
 #finds the header so can skip first rows of file
@@ -49,10 +49,10 @@ hap.df<-do.call("rbind",df.list)
 
 ########PLOTS
 
-hap.df.sub<-hap.df[hap.df$pos<=10000,]
+hap.df.beagle<-hap.df
 
 #blue/red palatte
-cbPalette<-c("#FF3300","#3300CC")
+cbPalette<-c("#FF3300","#0000FF")
 
 #blue/orange palatte
 cbPalette<-c("#FF9900","#3399FF")
@@ -61,11 +61,12 @@ cbPalette<-c("#FF9900","#3399FF")
 
 #find invariant sites
 
-hap.df%>%
-  filter(pos<=1000000)%>%
-ggplot(.,aes(xmin=pos,xmax=pos+0.25,ymin=((as.numeric(id)/4)+(hap/10)),ymax=((as.numeric(id)/4)+(hap/10)+0.07),color=state))+
+hap.df.beagle%>%
+  filter(pos<100000)%>%
+ggplot(.,aes(xmin=pos,xmax=pos+50,ymin=((as.numeric(id)/4)+(hap/10)),ymax=((as.numeric(id)/4)+(hap/10)+0.07),fill=state))+
   geom_rect()+
-  scale_color_manual(values=cbPalette)+
+  geom_text(aes(x=min(pos),y=0.30+as.numeric(id)/4,label=id,hjust=0))+
+  scale_fill_manual(values=cbPalette)+
   theme_classic()
 
 tmp<-hap.df%>%

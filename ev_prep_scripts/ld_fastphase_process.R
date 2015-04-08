@@ -1,5 +1,6 @@
 #fastphase formatting script
 
+library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
 
@@ -22,6 +23,7 @@ trimed.file<-unlist(lapply(file.lines,trim))
 fileConn<-file(file.path(getwd(),"ev_prep_scripts/fastphase/test_trim.in"))
 writeLines(trimed.file,fileConn)
 close(fileConn)
+
 ########END
 
 ########PARSE A FASTPHASE HAPGUESS FILE
@@ -45,15 +47,32 @@ for (i in 1:length(id.lines)){
   hap.df<-rbind(hap.df,hap.df.tmp)
 }
 
+#match in physical positions
+loci.list<-file("ev_prep_scripts/fastphase/marines_pac.groupI.locilist.txt")
+loci.list<-as.numeric(readLines(loci.list))
+
+loci.sub.df<-data.frame(index=c(1:max(hap.df$pos)),pos=loci.list[1:max(hap.df$pos)])
+
+hap.df$pos<-loci.sub.df$pos[match(hap.df$pos,loci.sub.df$index)]
+
 #blue/red palatte
-cbPalette<-c("#CCCCCC","#FF3300","#3300CC")
+cbPalette<-c("#CCCCCC","#FF3300","#0000FF")
+
+#blue/red palatte (no missing)
+cbPalette<-c("#FF3300","#0000FF")
 
 #blue/orange palatte
 cbPalette<-c("#CCCCCC","#FF9900","#3399FF")
 
 #plot chromosomes with ggplot
-ggplot(data=hap.df,aes(xmin=pos,xmax=pos+0.25,ymin=((as.numeric(id)/4)+(hap/10)),ymax=((as.numeric(id)/4)+(hap/10)+0.07),color=state))+
+
+hap.df.fp<-hap.df
+
+hap.df.fp%>%
+  filter(pos<10000)%>%
+  ggplot(.,aes(xmin=pos,xmax=pos+50,ymin=((as.numeric(id)/4)+(hap/10)),ymax=((as.numeric(id)/4)+(hap/10)+0.07),fill=state))+
   geom_rect()+
-  scale_color_manual(values=cbPalette)+
+  geom_text(aes(x=min(pos),y=0.30+as.numeric(id)/4,label=id,hjust=0))+
+  scale_fill_manual(values=cbPalette)+
   theme_classic()
 
