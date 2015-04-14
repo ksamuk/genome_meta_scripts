@@ -6,21 +6,22 @@ library("ggplot2")
 library("nlme")
 library("lme4")
 
-all.data<-read.table(file=file.path("analysis_ready","snp_outliers_analysis_Mar-26-2015.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_Apr-11-2015.txt"),header=TRUE,na.strings=c("NA","<NA>"))
 
 #set negative FSTs to NA
 #this is sketchy, but for now i'm doing it
-all.data[all.data$fst<0,]$fst<-NA
+all.data[!is.na(all.data$fst) & all.data$fst<0, ]$fst <- NA
 hist(all.data$fst)
-
+hist(all.data$dxy)
 ####magic janky outlier detection with dplyr
 is.outlier<-function(x){
   return(x>quantile(x,na.rm=TRUE,probs=0.95)[1])
 }
 
 all.data.filt<-all.data%>%
-  group_by(pop)%>%
-  mutate(outlier=is.outlier(fst))
+  group_by(comparison)%>%
+  mutate(fst.outlier=is.outlier(fst))%>%
+  mutate(dxy.outlier=is.outlier(dxy))
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
 
@@ -66,7 +67,7 @@ ggplot(data=outlier.dat,aes(x=pos,y=ds))+geom_point()+geom_point()+facet_wrap(~l
 ggplot(data=outlier.datt,aes(x=pos,y=ds))+geom_point()+stat_smooth(n=5)+facet_wrap(~lg)
 
 #recombination across genome
-ggplot(data=outlier.dat,aes(x=pos,y=recomb_rate))+geom_point()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pos1,y=recomb_rate))+geom_point()+facet_wrap(~lg)
 
 #genes
 ggplot(data=outlier.dat,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
@@ -76,10 +77,10 @@ ggplot(data=outlier.dat,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
 
 ####VISUALIZING EVS VS. FST
 
-outlier.dat
+
 ggplot(data=outlier.dat,aes(x=pos,y=fst,color=as.factor(in.a.gene)))+geom_smooth()+facet_wrap(~lg)
 
-ggplot(data=all.data.out,aes(x=pos,y=fst,color=in.a.gene))+geom_point()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=recomb_rate,y=dxy))+geom_point()+geom_smooth()
 
 ggplot(data=all.data.out,aes(y=ds,x=as.factor(outlier)))+geom_boxplot()
 
@@ -91,7 +92,8 @@ summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
 
 
 ####LINEAR MODELS
-mod1<-lme(fst~in.a.gene+ds+pi_pac_10k+recomb_rate,random=~1|study,data=all.data.out,na.action="na.omit")
+
+mod1<-lm(dxy~recomb_rate,data=outlier.dat,na.action="na.omit")
 anova(mod1)
 mod2<-glmer(outlier~pi_pac_marine+recomb_rates+(1|study),data=all.data.out,na.action="na.omit",family=binomial)
 
