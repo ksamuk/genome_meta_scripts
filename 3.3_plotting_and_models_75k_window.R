@@ -98,6 +98,16 @@ outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
 ggplot(.,aes(x=pos1,y=dxy))+
+  geom_smooth(aes(color="dxy"))+
+  geom_smooth(aes(x=pos1,y=fst/50,color="fst"))+
+  geom_smooth(aes(x=pos1,y=hexp1,color="hexp1"))+
+  geom_smooth(aes(x=pos1,y=hexp2,color="hexp2"))+
+  facet_grid(study_com~lg)
+
+outlier.dat%>%
+  filter(lg!=19,!is.na(dxy))%>%
+  mutate(study_com=paste(study,comparison,sep="_"))%>%
+  ggplot(.,aes(x=pos1,y=dxy))+
   geom_smooth()+
   geom_smooth(aes(x=pos1,y=fst/50,color="red"))+
   facet_grid(study_com~lg)
