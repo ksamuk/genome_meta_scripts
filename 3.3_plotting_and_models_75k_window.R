@@ -1,4 +1,4 @@
-#statistical analysis of dvs vs evs
+# statistical analysis of dvs vs evs
 
 library("dplyr")
 library("reshape2")
@@ -6,15 +6,19 @@ library("ggplot2")
 library("nlme")
 library("lme4")
 library("car")
+library("visreg")
+library("rgl")
 
+# data
 all.data<-read.table(file=file.path("analysis_ready","stats_75k_Apr-11-2015.txt"),header=TRUE,na.strings=c("NA","<NA>"))
 
-#set negative FSTs to NA
-#this is sketchy, but for now i'm doing it
+# set negative FSTs to NA
+# this is sketchy, but for now i'm doing it
 all.data[!is.na(all.data$fst) & all.data$fst<0, ]$fst <- NA
 hist(all.data$fst)
 hist(all.data$dxy)
-####magic janky outlier detection with dplyr
+
+#### magic janky outlier detection with dplyr
 is.outlier<-function(x){
   return(x>quantile(x,na.rm=TRUE,probs=0.95)[1])
 }
@@ -27,40 +31,45 @@ all.data.filt<-all.data%>%
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
 
-####end magic janky outlier detection with dplyr
+#### end magic janky outlier detection with dplyr
 
-####FILTERING OUTLIER FILE
+#### FILTERING EVS
 
-#Recombination distances >25cM
+# Recombination distances >25cM
 outlier.dat$recomb_rate[outlier.dat$recomb_rate>=25]<-NA
 
-#Gene true/false
+# Gene true/false
 outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 
-#KS
+# KS
 outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
-#dS
+# dS
 outlier.dat$ds[outlier.dat$ds>=1]<-NA
 
-#gene_count
+# gene_count
 outlier.dat$gene_count[outlier.dat$gene_count>=20]<-NA
+
+# marine pi
+#outlier.dat$gene_count[outlier.dat$pi_pac_10k>=0.02]<-NA
 
 #### END FILTERING
 
-####VISUALIZING EVS
+#### VISUALIZING EVS
 
-#pacific marine vs . atl marine pi
+# fst vs. dxy
 ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
-  geom_point(alpha=0.01)+
+  geom_point(alpha=0.05)+
+  geom_smooth()+
   scale_alpha(range = c(0.001, 1))
 
 ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
   geom_hex(bins=500)
 
-ggplot(data=outlier.dat,aes(x=recomb_rate,y=dxy))+
-  geom_point(alpha=0.1)+
-  geom_smooth()
+# dxy vs. recomb
+ggplot(data=outlier.dat,aes(x=pos1,y=recomb_rate))+
+  geom_point()+
+  facet_wrap(~lg)
 
 summary(with(outlier.dat,glm(dxy.outlier~ds+recomb_rate+phastcons+gene_count+gene_density+pi_pac_10k,family="binomial")))
 
@@ -73,9 +82,9 @@ outlier.dat%>%
 with(.,cor.test(as.numeric(fst.outlier),as.numeric(dxy.outlier),method="pearson"))
 
 #ds vs. pi?
-ggplot(data=outlier.dat,aes(x=pi_pac_10k,y=ds))+geom_smooth()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pi_pac_75k,y=ds))+geom_smooth()+facet_wrap(~lg)
 
-#ds vs. ks FIXED HAHAHAHA
+#ds vs. ks FIXED 
 ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point()+geom_smooth(method="lm")
 
 #ds vs. pos
@@ -157,7 +166,12 @@ summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
 
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
-  with(.,glm(dxy.outlier~gene_density*pi_pac_10k*recomb_rate*ds,na.action="na.omit",family=binomial))
+  #filter(study!="fer",study!="hohenlohe")%>%
+  with(.,glm(both.outlier~gene_density+pi_pac_75k+recomb_rate+ds+phastcons,na.action="na.omit",family=quasibinomial))
+
+visreg(mod1,trans=exp)
+visreg2d(mod1,x="recomb_rate",y="pi_pac_75k",plot.type="image",trans=exp)
+visreg2d(mod1,"recomb_rate","ds")
 
 #type 1 ANOVA
 Anova(mod1)
