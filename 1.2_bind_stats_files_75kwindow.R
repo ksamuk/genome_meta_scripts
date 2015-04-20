@@ -24,7 +24,7 @@ filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*sliding*"))
 
 #output file name and directory and with data stamp
 dir.create(file.path(stats.dir, "stats_75k_filtered"), showWarnings = FALSE)
-date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
+date.stamp<-paste("_",format(Sys.time(),"%Y-%m-%d"),sep="")
 out.file.name<-file.path(stats.dir, "stats_75k_filtered",paste("stats_75k_master",date.stamp,".txt",sep=""))
 
 #filters out invariant sites and reformats for rbinding

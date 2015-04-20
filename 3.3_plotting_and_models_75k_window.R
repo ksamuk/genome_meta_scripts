@@ -7,10 +7,9 @@ library("nlme")
 library("lme4")
 library("car")
 library("visreg")
-library("rgl")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_Apr-11-2015.txt"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-04-20.txt"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -156,8 +155,9 @@ summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
 
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
+  filter(study=="allopatric")%>%
   #filter(study!="fer",study!="hohenlohe")%>%
-  with(.,glm(both.outlier~gene_density+pi_pac_75k+recomb_rate+ds+phastcons,na.action="na.omit",family=quasibinomial))
+  with(.,glm(fst~gene_density+pi_pac_75k+recomb_rate+ds+phastcons,na.action="na.omit",family=quasibinomial))
 
 visreg(mod1,trans=exp)
 visreg2d(mod1,x="recomb_rate",y="pi_pac_75k",plot.type="image",trans=exp)

@@ -17,14 +17,14 @@ chrom.to.num<-function(x){
 stats.dir<-"/Users/Kieran/Documents/Science/Projects/Ph.D./Genome Meta Analysis/stats"
 
 #read in file names
-filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*.txt"))
+filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*stats.txt"))
 
 #headers for the bound file
 #column.names<-sapply(strsplit(list.files(stats.dir,pattern="*.txt")),"_"), function(x) x[1:2])
 
 #output file name and directory and with data stamp
 dir.create(file.path(stats.dir, "stats_filtered"), showWarnings = FALSE)
-date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
+date.stamp<-paste("_",format(Sys.time(),"%Y-%m-%d"),sep="")
 out.file.name<-file.path(stats.dir, "stats_filtered",paste("stats_master_variant",date.stamp,".txt",sep=""))
 
 #filters out invariant sites and reformats for rbinding
@@ -76,7 +76,7 @@ filter.fsts<-function(x){
 }
 
 #apply above function to filename list
-lapply(filenames[1:2],filter.fsts)
+lapply(filenames[1:length(filenames)],filter.fsts)
 
 
 

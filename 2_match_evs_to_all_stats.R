@@ -82,7 +82,7 @@ print(paste("complete!","matching took",(end.time-start.time),"seconds"))
 print("preview of output file:")
 print(head(matched.all))
 
-date.stamp<-paste("_",format(Sys.time(),"%b-%d-%Y"),sep="")
+date.stamp<-paste("_",format(Sys.time(),"%Y-%m-%d"),sep="")
 file.name<-paste("snp_outliers_analysis",date.stamp,".gz",sep="")
 write.table(matched.all,file=gzfile(file.path(getwd(),"analysis_ready",file.name)),row.names=FALSE)
 
