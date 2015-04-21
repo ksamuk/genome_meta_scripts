@@ -104,13 +104,14 @@ ggplot(data=outlier.dat,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
 
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
-  mutate(study_com=paste(study,comparison,sep="_"))%>%
-ggplot(.,aes(x=pos1,y=dxy))+
-  geom_smooth(aes(color="dxy"))+
-  geom_smooth(aes(x=pos1,y=fst/50,color="fst"))+
-  geom_smooth(aes(x=pos1,y=hexp1,color="hexp1"))+
-  geom_smooth(aes(x=pos1,y=hexp2,color="hexp2"))+
-  facet_grid(study_com~lg)
+  mutate(study_com=as.factor(paste(study,comparison,sep="_")))%>%
+  filter(grepl("rob",study_com))%>%   
+    ggplot(.,aes(x=pos1,y=dxy))+
+      geom_point(aes(color="dxy"))+
+      geom_point(aes(x=pos1,y=fst/50,color="fst"))+
+      #geom_line(aes(x=pos1,y=hexp1,color="hexp1"))+
+      #geom_line(aes(x=pos1,y=hexp2,color="hexp2"))+
+      facet_grid(study_com~lg)
 
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
