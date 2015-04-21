@@ -1,7 +1,8 @@
 # merge tab delim vcf files
 
-library(dplyr)
+
 library(data.table)
+library(dplyr)
 
 # list of files 
 file.list <- list.files(pattern="*\\.tab")
@@ -36,7 +37,8 @@ for (i in 1:length(chrom.list)){
     print("Done!")
     
     print(paste("Merging file ",file.list[j]," with stack...",sep=""))
-    file.merged.chrom<-merge(file.merged.chrom,file.current.chrom,by=c("CHROM","POS"),all=TRUE,incomparables="NN")
+    #file.merged.chrom<-merge(file.merged.chrom,file.current.chrom,by=c("CHROM","POS"),all=TRUE,incomparables="NN")
+    file.merged.chrom<-full_join(file.merged.chrom,file.current.chrom)
     print("Done!")
     
     
@@ -53,7 +55,11 @@ for (i in 1:length(chrom.list)){
 
 
 #### build concatenated file (optional)
+
 library(data.table)
+print("NA->NN conversion...")
+system(paste("sed -i 's/NA/NN/g' merged_chromo/*.tab"))
+
 print("All chromosomes merged! Building master file...")
 chromo.files <- list.files("merged_chromo")
 date.stamp <- paste("_",format(Sys.time(), "%b-%d-%Y"), sep="")
@@ -64,21 +70,19 @@ chromo.files <- chromo.files[order(chrom.order)]
 
 header.list<-list()
 for (i in 1:length(chromo.files)){
-  file.current <- fread(file.path("merged_chromo",chromo.files[i]),header=TRUE)
+  file.current <- fread(file.path("merged_chromo",chromo.files[i]),header=TRUE,colClasses="character")
   header.list[[i]] <- names(file.current)
   header.tf <- i==1
-  print(paste("Printing header?",header.tf))
+  print(paste(length((file.current),header.tf)))
   write.table(file.current,
-              file=file.path("merged_chromo", merged.file.name), 
-              col.names=header.tf, 
+              file=file.path("merged_chromo", merged.file.name),
+              col.names=header.tf,
               append=!header.tf,
               row.names=FALSE,
-              quote=FALSE)
-}
-
-if (length(unique(header.list))>1){
-  print("WARNING: SOME HEADERS DO NOT MATCH!")
-  print(unique(header.list))
+              quote=FALSE,
+              sep="\t")
+  rm(file.current)
+  gc()
 }
 
 
