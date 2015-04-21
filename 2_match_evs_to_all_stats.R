@@ -15,7 +15,9 @@ home.dir<-gsub("/genome_meta_scripts","",getwd())
 
 ev.dir<-file.path(getwd(),"evs")
 
-stats.file<-read.csv(file=file.path(home.dir,"all_stats_all_pops_feb9-2014.csv"),header=TRUE)
+stats.dir<-paste(gsub("genome_meta_scripts","stats/stats_filtered",getwd()))
+stats.file<-list.files(stats.dir,"stats_master_variant_2015-04-21")
+stats.file<-read.table(file=stats.file,header=TRUE,stringsAsFactors=FALSE)
 stats.file<-arrange(stats.file,lg,pos)
 
 

@@ -1,5 +1,7 @@
 # statistical analysis of dvs vs evs
 
+rm(list=ls())
+
 library("dplyr")
 library("reshape2")
 library("ggplot2")
@@ -9,7 +11,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-04-20.txt"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-04-21.txt"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -105,10 +107,20 @@ ggplot(data=outlier.dat,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
-ggplot(.,aes(x=pos1,y=dxy))+
+ggplot(.,aes(x=pos1,y=dxy,color="dxy"))+
   geom_smooth()+
-  geom_smooth(aes(x=pos1,y=fst/50,color="red"))+
+  geom_smooth(aes(x=pos1,y=fst/50,color="fst"))+
   facet_grid(study_com~lg)
+
+outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(allopatric=as.factor((study=="allopatric")))%>%
+  ggplot(.,aes(x=fst,y=dxy,color=allopatric))+
+    #geom_point()+
+    #scale_y_continuous(limits=c(0, 0.05))+
+    geom_smooth(method="lm")
+
+
 
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
@@ -155,9 +167,17 @@ summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
 
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
+  mutate(allopatric=as.factor((study=="allopatric")))%>%
+  with(.,glm(fst~dxy*allopatric,na.action="na.omit",family=quasibinomial))
+
+summary(mod1)
+
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
   filter(study=="allopatric")%>%
+  mutate(allopatric=study=="allopatric")%>%
   #filter(study!="fer",study!="hohenlohe")%>%
-  with(.,glm(fst~gene_density+pi_pac_75k+recomb_rate+ds+phastcons,na.action="na.omit",family=quasibinomial))
+  with(.,glm(fst~dxy+pi_pac_75k+recomb_rate+ds+phastcons,na.action="na.omit",family=quasibinomial))
 
 visreg(mod1,trans=exp)
 visreg2d(mod1,x="recomb_rate",y="pi_pac_75k",plot.type="image",trans=exp)
