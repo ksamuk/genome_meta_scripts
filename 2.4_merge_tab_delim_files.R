@@ -97,5 +97,11 @@ for (i in 1:length(chromo.files)){
   gc()
 }
 
+if (length(unique(header.list))>1){
+    print("WARNING: SOME HEADERS DO NOT MATCH, MASTER FILE PROBABLY F'ED")
+    print(unique(header.list))
+  }else{
+    print("Master file build complete!")
+  }
 
 
