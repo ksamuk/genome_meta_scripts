@@ -50,7 +50,7 @@ for (i in 1:length(chrom.list)){
     
     print(paste("Merging file ",file.list[j]," with stack...",sep=""))
     file.merged.chrom<-merge(file.merged.chrom,file.current.chrom,by=c("CHROM","POS"),all=TRUE,incomparables="NN")
-    ##untested dplyr implementation, probably MUCH faster
+    ##untested dplyr implementation, comment out line above and uncomment line below. Probably MUCH faster.
     #file.merged.chrom<-full_join(file.merged.chrom,file.current.chrom,by=c("CHROM","POS"))
     
     print("Done!")
