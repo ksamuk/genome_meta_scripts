@@ -15,6 +15,11 @@ file.list <- list.files(pattern="*\\.tab")
 # make output dirs
 dir.create("merged_chromo", showWarnings = FALSE)
 
+# date stamp and master file name
+# default is "sb_meta_all_datestamp.tab"
+date.stamp <- paste("_",format(Sys.time(), "%Y-%m-%d"), sep="")
+merged.file.name <- paste("sb_meta_all", date.stamp, ".tab",sep="")
+
 #### PART 1: extract chromosomes from each file, do a full join
 
 # list of chromosomes
