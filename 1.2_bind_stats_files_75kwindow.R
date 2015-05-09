@@ -38,8 +38,22 @@ filter.fsts<-function(x){
   #matched.file<-matched.file[!matched.file$Fst==Inf,]
   
   #study and comparison names
+  
   study<-strsplit(gsub(paste(stats.dir,"/",sep=""),"",x),"_")[[1]][1]
   comparison<-strsplit(gsub(paste(stats.dir,"/",sep=""),"",x),"_")[[1]][2]
+  geography<-"parapatric.d"
+  
+  if(grepl("allopatricD",study)==TRUE){
+    study<-"allopatric.d"
+    geography<-"allopatric.d"
+    comparison<-strsplit(gsub(paste(stats.dir,"/",sep=""),"",x),"_")[[1]][2]
+  }
+  
+  if(grepl("allopatricS",study)==TRUE){
+    study<-"allopatric.s"
+    geography<-"allopatric.s"
+    comparison<-strsplit(gsub(paste(stats.dir,"/",sep=""),"",x),"_")[[1]][2]
+  }
   
   print("Formatting for output...")
   print(study)
@@ -56,7 +70,7 @@ filter.fsts<-function(x){
                      hexp2=matched.file$Hexp2)
   df.tmp$study<-study
   df.tmp$comparison<-comparison
-  
+  df.tmp$geography<-geography
   #remove scaffolds
   df.tmp<-df.tmp[grep("group",df.tmp$lg),]
   

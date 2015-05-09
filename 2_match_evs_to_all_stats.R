@@ -8,8 +8,6 @@ rm(list=ls())
 
 library("IRanges")
 library("dplyr")
-install_github("hadley/readr")
-
 
 home.dir<-gsub("/genome_meta_scripts","",getwd())
 
@@ -17,6 +15,7 @@ ev.dir<-file.path(getwd(),"evs")
 
 stats.dir<-paste(gsub("genome_meta_scripts","stats/stats_filtered",getwd()))
 stats.file<-list.files(stats.dir,"stats_master_variant_2015-04-21")
+stats.file<-file.path(stats.dir,stats.file)
 stats.file<-read.table(file=stats.file,header=TRUE,stringsAsFactors=FALSE)
 stats.file<-arrange(stats.file,lg,pos)
 

@@ -11,7 +11,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-04-21.txt"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-05-08.txt"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -107,24 +107,33 @@ ggplot(data=outlier.dat,aes(x=pos,y=in.a.gene))+geom_poi()+facet_wrap(~lg)
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   mutate(study_com=as.factor(paste(study,comparison,sep="_")))%>%
-  filter(grepl("rob",study_com))%>%   
-    ggplot(.,aes(x=pos1,y=dxy))+
-      geom_point(aes(color="dxy"))+
-      geom_point(aes(x=pos1,y=fst/50,color="fst"))+
+  filter(grepl("benlim",study))%>%
+    ggplot(.,aes(x=pos1,y=ld_pac))+
+      geom_point(aes(color="ld"))+
+      geom_point(aes(x=pos1,y=fst,color="fst"))+
       #geom_line(aes(x=pos1,y=hexp1,color="hexp1"))+
       #geom_line(aes(x=pos1,y=hexp2,color="hexp2"))+
       facet_grid(study_com~lg)
 
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
+  filter(grepl("allo",study)) %>% 
+  filter(grepl("con",comparison)) %>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
-<<<<<<< HEAD
-ggplot(.,aes(x=pos1,y=dxy,color="dxy"))+
-=======
-  ggplot(.,aes(x=pos1,y=dxy))+
->>>>>>> 4fd0e477773f1355de95d9841703658a72d71735
+    ggplot(.,aes(x=pos1,y=as.numeric(dxy.outlier),color="dxy"))+
+    geom_smooth()+
+    geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
+    facet_grid(study_com~lg)
+
+outlier.dat%>%
+  filter(lg!=19,!is.na(dxy))%>%
+  #filter(grepl("allo",study)) %>% 
+  filter(grepl("boo",comparison)) %>%
+  mutate(study_com=paste(study,comparison,sep="_"))%>%
+  ggplot(.,aes(x=pos1,y=dxy,color="dxy"))+
   geom_smooth()+
   geom_smooth(aes(x=pos1,y=fst/50,color="fst"))+
+  geom_smooth(aes(x=pos1,y=recomb_rate/500,color="recomb"))+
   facet_grid(study_com~lg)
 
 outlier.dat%>%
@@ -162,6 +171,11 @@ ggplot(.,aes(y=recomb_rate,x=as.factor(both.outlier)))+
 
 outlier.dat%>%
   filter(lg!=19,!is.na(both.outlier))%>%
+  ggplot(.,aes(y=recomb_rate,x=as.factor(geography)))+
+  geom_boxplot()
+
+outlier.dat%>%
+  filter(lg!=19,!is.na(both.outlier))%>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
   ggplot(.,aes(x=pos1,y=as.numeric(both.outlier)))+
   geom_smooth()+
@@ -182,19 +196,42 @@ summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
 
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
-  mutate(allopatric=as.factor((study=="allopatric")))%>%
-  with(.,glm(fst~dxy*allopatric,na.action="na.omit",family=quasibinomial))
+  mutate(gene.flow=!grepl("allopatric",study))%>%
+  mutate(div.selection=!grepl("allopatric.s",study))%>%
+  with(.,glm(dxy.outlier~recomb_rate*
+               gene.flow*
+               div.selection,
+               na.action="na.omit",
+               family=binomial))
 
 summary(mod1)
+visreg(mod1,"recomb_rate",by="div.selection")
+Anova(mod1)
+Anova(mod1,type="I")
+anova(mod1)
 
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
-  filter(study=="allopatric")%>%
-  mutate(allopatric=study=="allopatric")%>%
   #filter(study!="fer",study!="hohenlohe")%>%
-  with(.,glm(fst~dxy+pi_pac_75k+recomb_rate+ds+phastcons,na.action="na.omit",family=quasibinomial))
+  with(.,glm(fst.outlier~recomb_rate*geography,na.action="na.omit",family=quasibinomial))
 
-visreg(mod1,trans=exp)
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=recomb_rate,y=as.numeric(fst.outlier),colour=geography))+
+    geom_point(alpha=0.1)+
+    geom_smooth()+
+    coord_cartesian(xlim=c(0,5),ylim=c(0,0.25))
+
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=recomb_rate,y=as.numeric(both.outlier),colour=geography))+
+  geom_point(alpha=0.1)+
+  geom_smooth()+
+  coord_cartesian(xlim=c(0,2),ylim=c(0,0.1))
+    
+    
+
+visreg(mod1,"geography")
 visreg2d(mod1,x="recomb_rate",y="pi_pac_75k",plot.type="image",trans=exp)
 visreg2d(mod1,"recomb_rate","ds")
 

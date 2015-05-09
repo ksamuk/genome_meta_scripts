@@ -7,10 +7,10 @@
 #rm(list=ls())
 
 #installing biomaRt from bioconductor
-#source("http://bioconductor.org/biocLite.R")
-#biocLite(lib="~/bin/R/libraries")
-#biocLite(c("biomaRt","rtracklayer"),lib="~/bin/R/libraries")
-#biocLite(c("rtracklayer"))
+source("http://bioconductor.org/biocLite.R")
+biocLite(lib="~/bin/R/libraries")
+biocLite(c("biomaRt","rtracklayer"),lib="~/bin/R/libraries")
+biocLite(c("rtracklayer"))
 #libraries
 library(rtracklayer)
 library(biomaRt)

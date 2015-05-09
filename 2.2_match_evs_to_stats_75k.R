@@ -117,7 +117,7 @@ for (i in 1:length(ev.files)){
   ###end lg loop
   
   #attach real name of ev and cbind to stats file
-  names(matched.evs)[12]<-sapply(strsplit(ev.files[i],split=".txt"),function(x)x[1])
+  names(matched.evs)[13]<-sapply(strsplit(ev.files[i],split=".txt"),function(x)x[1])
   matched.all<-left_join(matched.all,matched.evs)
   
 }
