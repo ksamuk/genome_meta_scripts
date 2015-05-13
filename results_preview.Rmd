@@ -2,9 +2,10 @@
 title: "Genome Meta Analysis - Results Preview"
 author: "Kieran Samuk"
 date: "May 12, 2015"
-output:  
-     html_document:  
-       keep_md: true 
+output:
+  html_document:
+    keep_md: yes
+  pdf_document: default
 ---
 
 # Genome Meta Analysis - Results Preview (75k windows)
@@ -111,7 +112,6 @@ ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
 outlier.dat %>%
   ggplot(aes(x=pos1, y=as.numeric(dxy.outlier), color=geography))+
     geom_smooth()+
-    geom_smooth(aes(y=gene_density,color="gene_density"))+
     facet_wrap(~lg)
 
 myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")), space="Lab")
@@ -140,7 +140,7 @@ outlier.dat %>%
       geom_smooth(aes(x=pos1,y=recomb_rate_q,color="recomb"))+
       geom_smooth(aes(x=pos1,y=gene_count_q,color="count"))+
       geom_smooth(aes(x=pos1,y=ks_q,color="ks"))+
-        facet_wrap(~lg)
+      facet_grid(lg~.)
 
 
 
@@ -176,6 +176,10 @@ outlier.dat%>%
     geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
     facet_grid(study_com~lg)
 
+```
+
+```{r eval=FALSE}
+
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   #filter(grepl("allo",study)) %>% 
@@ -187,6 +191,9 @@ outlier.dat%>%
   geom_smooth(aes(x=pos1,y=recomb_rate/500,color="recomb"))+
   facet_grid(study_com~lg)
 
+```
+
+```{r eval=FALSE}
 outlier.dat%>%
   filter(lg!=19)%>%
   mutate(allopatric=as.factor((study=="allopatric")))%>%

@@ -1,11 +1,6 @@
----
-title: "Genome Meta Analysis - Results Preview"
-author: "Kieran Samuk"
-date: "May 12, 2015"
-output:  
-     html_document:  
-       keep_md: true 
----
+# Genome Meta Analysis - Results Preview
+Kieran Samuk  
+May 12, 2015  
 
 # Genome Meta Analysis - Results Preview (75k windows)
 This is a preview of the analysis code and results from our meta-analysis.
@@ -16,11 +11,54 @@ This is a preview of the analysis code and results from our meta-analysis.
 rm(list=ls())
 
 library("dplyr")
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
 library("reshape2")
 library("ggplot2")
+library("RColorBrewer")
 library("hexbin")
 library("nlme")
+```
+
+```
+## 
+## Attaching package: 'nlme'
+## 
+## The following object is masked from 'package:dplyr':
+## 
+##     collapse
+```
+
+```r
 library("lme4")
+```
+
+```
+## Loading required package: Matrix
+## Loading required package: Rcpp
+## 
+## Attaching package: 'lme4'
+## 
+## The following object is masked from 'package:nlme':
+## 
+##     lmList
+```
+
+```r
 library("car")
 library("visreg")
 ```
@@ -91,7 +129,18 @@ outlier.dat %>%
     facet_wrap(~lg)
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png) 
+![](results_preview_files/figure-html/unnamed-chunk-5-1.png) 
+
+## Gene density rate
+
+```r
+outlier.dat %>%
+  ggplot(aes(x=pos1,y=gene_density))+
+    geom_smooth()+
+    facet_wrap(~lg)
+```
+
+![](results_preview_files/figure-html/unnamed-chunk-6-1.png) 
 
 ## fst vs. dxy
 
@@ -102,7 +151,7 @@ ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
   scale_alpha(range = c(0.001, 1))
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+![](results_preview_files/figure-html/unnamed-chunk-7-1.png) 
 
 ## dxy outliers 
 
@@ -113,7 +162,43 @@ outlier.dat %>%
     facet_wrap(~lg)
 ```
 
-![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-1.png) 
+![](results_preview_files/figure-html/unnamed-chunk-8-1.png) 
+
+```r
+myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")), space="Lab")
+
+sp<-0.5
+outlier.dat %>%
+  mutate(recomb_rate_q = as.numeric(scale(recomb_rate))) %>%
+  mutate(gene_density_q = as.numeric(scale(gene_density))) %>%
+  mutate(gene_count_q = as.numeric(scale(gene_count))) %>%
+  mutate(ks_q = as.numeric(scale(ks))) %>%
+    ggplot(aes(xmin=pos1,xmax=pos2,ymin=1,ymax=2,fill=recomb_rate_q))+
+      geom_rect()+
+      geom_rect(aes(ymin=2+sp,ymax=3+sp,fill=gene_density_q))+
+      geom_rect(aes(ymin=3+sp*2,ymax=4+sp*2,fill=gene_count_q))+
+      geom_rect(aes(ymin=4+sp*3,ymax=5+sp*3,fill=ks_q))+
+      facet_wrap(~lg)+
+      scale_fill_gradientn(colours = myPalette(100))+
+      ylim(c(0,10))
+```
+
+![](results_preview_files/figure-html/unnamed-chunk-8-2.png) 
+
+```r
+outlier.dat %>%
+  mutate(recomb_rate_q = as.numeric(scale(recomb_rate))) %>%
+  mutate(gene_density_q = as.numeric(scale(gene_density))) %>%
+  mutate(gene_count_q = as.numeric(scale(gene_count))) %>%
+  mutate(ks_q = as.numeric(scale(ks))) %>%
+    ggplot(aes(x=pos1,y=gene_density_q,color="gene_density"))+
+      geom_smooth(aes(x=pos1,y=recomb_rate_q,color="recomb"))+
+      geom_smooth(aes(x=pos1,y=gene_count_q,color="count"))+
+      geom_smooth(aes(x=pos1,y=ks_q,color="ks"))+
+      facet_grid(lg~.)
+```
+
+![](results_preview_files/figure-html/unnamed-chunk-8-3.png) 
 
 ## fst outliers 
 
@@ -124,7 +209,7 @@ outlier.dat %>%
     facet_wrap(~lg)
 ```
 
-![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png) 
+![](results_preview_files/figure-html/unnamed-chunk-9-1.png) 
 
 ## dxy & fst outliers 
 
@@ -135,7 +220,7 @@ outlier.dat %>%
     facet_wrap(~lg)
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png) 
+![](results_preview_files/figure-html/unnamed-chunk-10-1.png) 
 
 # 6. Divergence metrics vs. genomic variables
 
@@ -150,7 +235,10 @@ outlier.dat%>%
     geom_smooth()+
     geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
     facet_grid(study_com~lg)
+```
 
+
+```r
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   #filter(grepl("allo",study)) %>% 
@@ -161,7 +249,10 @@ outlier.dat%>%
   geom_smooth(aes(x=pos1,y=fst/50,color="fst"))+
   geom_smooth(aes(x=pos1,y=recomb_rate/500,color="recomb"))+
   facet_grid(study_com~lg)
+```
 
+
+```r
 outlier.dat%>%
   filter(lg!=19)%>%
   mutate(allopatric=as.factor((study=="allopatric")))%>%
