@@ -5,7 +5,8 @@ date: "May 12, 2015"
 output:
   html_document:
     keep_md: yes
-  pdf_document: default
+    fig_width: 8
+    fig_height: 8
 ---
 
 # Genome Meta Analysis - Results Preview (75k windows)
@@ -86,16 +87,28 @@ outlier.dat$gene_count[outlier.dat$gene_count >= 20] <- NA
 ```{r warning=FALSE}
 outlier.dat %>%
   filter(!is.na(recomb_rate)) %>%
-  ggplot(aes(x=pos1,y=recomb_rate))+
+  ggplot(aes(x = pos1, y = recomb_rate))+
     geom_point()+
     facet_wrap(~lg)
 ```
 
-## Gene density rate
+## Gene density 
 ```{r warning=FALSE}
 outlier.dat %>%
-  ggplot(aes(x=pos1,y=gene_density))+
-    geom_smooth()+
+  ggplot(aes(x = pos1, y = gene_density))+
+    geom_point(alpha = 0.01)+
+    geom_smooth(size = 1)+
+    scale_alpha(range = c(0.001, 1))+
+    facet_wrap(~lg)
+```
+
+## Gene count 
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x = pos1, y = gene_count))+
+    geom_point(alpha = 0.01)+
+    geom_smooth(size = 1.5)+
+    scale_alpha(range = c(0.001, 1))+
     facet_wrap(~lg)
 ```
 
@@ -115,7 +128,10 @@ outlier.dat %>%
     facet_wrap(~lg)
 
 myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")), space="Lab")
+```
 
+## 2d "heat map" of genomic variables
+```{r warning=FALSE}
 sp<-0.5
 outlier.dat %>%
   mutate(recomb_rate_q = as.numeric(scale(recomb_rate))) %>%
@@ -130,7 +146,10 @@ outlier.dat %>%
       facet_wrap(~lg)+
       scale_fill_gradientn(colours = myPalette(100))+
       ylim(c(0,10))
+```
 
+## scaled genomic variables (y in units of sd's)
+```{r warning=FALSE}
 outlier.dat %>%
   mutate(recomb_rate_q = as.numeric(scale(recomb_rate))) %>%
   mutate(gene_density_q = as.numeric(scale(gene_density))) %>%
@@ -140,27 +159,84 @@ outlier.dat %>%
       geom_smooth(aes(x=pos1,y=recomb_rate_q,color="recomb"))+
       geom_smooth(aes(x=pos1,y=gene_count_q,color="count"))+
       geom_smooth(aes(x=pos1,y=ks_q,color="ks"))+
-      facet_grid(lg~.)
-
-
-
+      #facet_grid(lg~.)
+      facet_wrap(~lg)
 ```
 
-## fst outliers 
+# Allopatric Comparisons
+
+## fst outliers by chromosome
 ```{r warning=FALSE}
 outlier.dat %>%
   ggplot(aes(x=pos1, y=as.numeric(fst.outlier), color=geography))+
+    geom_smooth(size=1)+
+    facet_wrap(~lg)
+```
+
+## dxy outliers by chromosome
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=pos1, y=as.numeric(dxy.outlier), color=geography))+
     geom_smooth()+
     facet_wrap(~lg)
 ```
 
-## dxy & fst outliers 
+## dxy & fst outliers by chromosome
 ```{r warning=FALSE}
 outlier.dat %>%
   ggplot(aes(x=pos1, y=as.numeric(both.outlier), color=geography))+
     geom_smooth()+
     facet_wrap(~lg)
 ```
+
+## dxy vs. fst (raw)
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=log(fst+1), y=log(dxy+1), color=geography))+
+    geom_point()+
+    geom_smooth()
+```
+
+# divergence vs. recombination
+
+## dxy outlier vs. recomb (raw)
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=log(recomb_rate), y=as.numeric(dxy.outlier), color=geography))+
+    geom_point()+
+    geom_smooth()
+```
+
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=log(recomb_rate), y=as.numeric(fst.outlier), color=geography))+
+    geom_point()+
+    geom_smooth()
+```
+
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=fst, y=dxy, color=geography))+
+    geom_point()+
+    geom_smooth()
+```
+
+```{r warning=FALSE}
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=!grepl("allopatric",study))%>%
+  mutate(div.selection=!grepl("allopatric.s",study))%>%
+  with(.,glm(dxy.outlier~recomb_rate*ds*ld_atl*gene_count*exon*gene.flow*div.selection,
+               na.action="na.omit",
+               family=binomial))
+
+summary(mod1)
+Anova(mod1)
+visreg(mod1,"recomb_rate",by="div.selection")
+
+
+```
+
 
 # 6. Divergence metrics vs. genomic variables
 
