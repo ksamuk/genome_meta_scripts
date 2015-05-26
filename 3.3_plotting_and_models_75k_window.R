@@ -9,9 +9,10 @@ library("nlme")
 library("lme4")
 library("car")
 library("visreg")
+library("cats")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-05-08.txt"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-05-20.txt"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -48,11 +49,14 @@ outlier.dat$ks[outlier.dat$ks>=1]<-NA
 # dS
 outlier.dat$ds[outlier.dat$ds>=1]<-NA
 
+# dN
+outlier.dat$dn[outlier.dat$dn>=0.4]<-NA
+
 # gene_count
 outlier.dat$gene_count[outlier.dat$gene_count>=20]<-NA
 
 # marine pi
-#outlier.dat$gene_count[outlier.dat$pi_pac_10k>=0.02]<-NA
+outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.02]<-NA
 
 #### END FILTERING
 
@@ -60,15 +64,22 @@ outlier.dat$gene_count[outlier.dat$gene_count>=20]<-NA
 
 # fst vs. dxy
 ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
+  add_cat(lighten = 0.95)+
   geom_point(alpha=0.05)+
   geom_smooth()+
   scale_alpha(range = c(0.001, 1))
+
+# dxy vs ds
+ggplot(data=outlier.dat,aes(x=dxy.outlier,y=ks))+
+  geom_boxplot()
+ 
 
 ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
   geom_hex(bins=500)
 
 # dxy vs. recomb
 ggplot(data=outlier.dat,aes(x=pos1,y=recomb_rate))+
+  add_cat()+
   geom_point()+
   facet_wrap(~lg)
 
@@ -83,7 +94,7 @@ outlier.dat%>%
 with(.,cor.test(as.numeric(fst.outlier),as.numeric(dxy.outlier),method="pearson"))
 
 #ds vs. pi?
-ggplot(data=outlier.dat,aes(x=pi_pac_75k,y=ds))+geom_smooth()+facet_wrap(~lg)
+ggplot(data=outlier.dat,aes(x=pi_pac_75k,y=ds))+add_cat()+geom_smooth()+facet_wrap(~lg)
 
 #ds vs. ks FIXED 
 ggplot(data=outlier.dat,aes(x=ks,y=ds))+geom_point()+geom_smooth(method="lm")
@@ -194,26 +205,126 @@ summary(lm(log(pi_pac_marine+1)~in.a.gene,data=all.data.out))
 
 ####LINEAR MODELS
 
+
+######### DXY VS GENOMIC VARIABLES ##########
+outlier.new <- outlier.dat%>%
+  filter(!grepl("allo",geography))
+outlier.new$comparison<-as.factor(as.character(outlier.new$comparison))
+
+outlier.new%>%
+  ggplot(aes(y=as.numeric(dxy.outlier),x=pos1,color=comparison))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+outlier.dat%>%
+  ggplot(aes(y=as.numeric(dxy.outlier),x=pos1,color=geography))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+outlier.dat%>%
+  ggplot(aes(y=as.numeric(fst.outlier),x=pos1,color=geography))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+outlier.dat%>%
+  mutate(com.study=paste0(study,comparison))%>%
+  filter(!grepl("allo", geography)) %>%
+  ggplot(aes(y=as.numeric(fst.outlier),x=pos1,color=com.study))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+outlier.dat%>%
+  mutate(com.study=paste0(study,comparison))%>%
+  filter(!grepl("allo", geography)) %>%
+  ggplot(aes(y=as.numeric(dxy.outlier),x=pos1,color=com.study))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+
+outlier.dat%>%
+  ggplot(aes(y=dxy.outlier,x=pos1,color=comparison))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+
+outlier.dat%>%
+  ggplot(aes(y=dxy.outlier,x=pos1,color=comparison))+
+  geom_smooth(se=F,size=1)+
+  facet_wrap(~lg)
+
+outlier.new%>%
+  filter(comparison=="boot")%>%
+  ggplot(aes(y=as.numeric(dxy.outlier),x=pos1,color="dxy"))+
+  geom_smooth(se=F,size=1)+
+  geom_smooth(aes(y=as.numeric(fst.outlier),x=pos1,color="fst"),se=F,size=1)+
+  facet_wrap(~lg)
+
+
+
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
-  mutate(gene.flow=!grepl("allopatric",study))%>%
-  mutate(div.selection=!grepl("allopatric.s",study))%>%
-  with(.,glm(dxy.outlier~recomb_rate*
-               gene.flow*
-               div.selection,
+  with(.,glm(as.numeric(dxy.outlier)~recomb_rate*pi_pac_10k*ld_pac,
                na.action="na.omit",
                family=binomial))
 
 summary(mod1)
-visreg(mod1,"recomb_rate",by="div.selection")
 Anova(mod1)
-Anova(mod1,type="I")
-anova(mod1)
 
-mod1<-outlier.dat%>%
+visreg(mod1,"pi_pac_10k")
+visreg(mod1,"recomb_rate")
+visreg(mod1,"ld_pac")
+visreg2d(mod1,"recomb_rate","ld_pac",plot.type="image")
+visreg2d(mod1,"recomb_rate","pi_pac_10k",plot.type="image")
+
+
+## BOXPLOTS FOR DXY OUTLIERS
+outlier.dat%>%
   filter(lg!=19)%>%
-  #filter(study!="fer",study!="hohenlohe")%>%
-  with(.,glm(fst.outlier~recomb_rate*geography,na.action="na.omit",family=quasibinomial))
+  ggplot(aes(x=dxy.outlier,y=recomb_rate, color=geography))+
+  geom_boxplot()   
+
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=fst.outlier,y=recomb_rate, color=geography))+
+  geom_boxplot()  
+##  
+
+## BOXPLOTS FOR DXY OUTLIERS
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=dn,y=ds))+
+  geom_point()+
+  geom_smoothmeth
+##     
+
+######### DXY VS GENOMIC VARIABLES ##########
+
+######### FST VS GENOMIC VARIABLES ##########
+mod2<-outlier.dat%>%
+  filter(lg!=19)%>%
+         with(glm(as.numeric(fst.outlier)~recomb_rate*pi_pac_10k*ld_pac,
+         na.action="na.omit",
+         family=binomial))
+         
+         summary(mod2)
+         anova(mod2)
+         Anova(mod2)
+         
+         visreg(mod2,"pi_pac_10k") # reverse direction
+         visreg(mod2,"recomb_rate") # same dir
+         visreg(mod2,"ld_pac") # same dir
+         visreg2d(mod2,"recomb_rate","ld_pac",plot.type="image") # rather different
+         visreg2d(mod2,"recomb_rate","pi_pac_10k",plot.type="image")
+         visreg2d(mod2,"recomb_rate","pi_pac_10k",plot.type="rgl")
+         visreg2d(mod2,"recomb_rate","pi_pac_10k")
+
+## BOXPLOTS FOR FST OUTLIERS
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=fst.outlier,y=recomb_rate))+
+  geom_boxplot()        
+##         
+
 
 outlier.dat%>%
   filter(lg!=19)%>%
@@ -230,7 +341,6 @@ outlier.dat%>%
   coord_cartesian(xlim=c(0,2),ylim=c(0,0.1))
     
     
-
 visreg(mod1,"geography")
 visreg2d(mod1,x="recomb_rate",y="pi_pac_75k",plot.type="image",trans=exp)
 visreg2d(mod1,"recomb_rate","ds")

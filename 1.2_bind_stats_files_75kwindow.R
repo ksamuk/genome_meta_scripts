@@ -31,7 +31,8 @@ out.file.name<-file.path(stats.dir, "stats_75k_filtered",paste("stats_75k_master
 filter.fsts<-function(x){
   
   print(paste("Processing",x,"..."))
-  matched.file<-fread(x,header=TRUE)
+  read.express <- paste0('zcat < ', x)
+  matched.file<-fread(read.express,header=TRUE)
   
   ##filter invariant sites
   #matched.file<-matched.file[!is.na(matched.file$Fst),]

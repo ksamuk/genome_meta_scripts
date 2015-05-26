@@ -31,7 +31,7 @@ library("visreg")
 
 ```{r}
 
-all.data <- read.table(file=file.path("analysis_ready","stats_75k_2015-05-08.txt"), 
+all.data <- read.table(file=file.path("analysis_ready","stats_75k_2015-05-18.txt"), 
                        header=TRUE, 
                        na.strings=c("NA", "<NA>"))
 ```
@@ -176,16 +176,45 @@ outlier.dat %>%
 ## dxy outliers by chromosome
 ```{r warning=FALSE}
 outlier.dat %>%
+  #mutate(com.study=paste0(study,comparison))%>%
   ggplot(aes(x=pos1, y=as.numeric(dxy.outlier), color=geography))+
-    geom_smooth()+
+    geom_smooth(size=1)+
     facet_wrap(~lg)
+
+outlier.dat %>%
+  mutate(com.study=paste0(study,comparison))%>%
+  ggplot(aes(x=pos1, y=as.numeric(fst.outlier), color=com.study))+
+    geom_smooth(size=1)+
+    facet_wrap(~lg)
+
+outlier.dat %>%
+  ggplot(aes(x=pos1, y=as.numeric(dxy.outlier), color=geography))+
+    geom_smooth(size=1)+
+    facet_wrap(~lg)
+```
+
+## dxy outliers by chromosome
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=pos1, y=as.numeric(dxy.outlier)))+
+    geom_smooth(size=1)+
+    facet_wrap(~lg)
+
+outlier.dat %>%
+  ggplot(aes(x=recomb_rate, y=as.numeric(fst.outlier),color=geography))+
+    geom_smooth(size=1)
+
+outlier.dat %>%
+  ggplot(aes(x=recomb_rate, y=as.numeric(dxy.outlier),color=geography))+
+    geom_smooth(size=1)
+
 ```
 
 ## dxy & fst outliers by chromosome
 ```{r warning=FALSE}
 outlier.dat %>%
   ggplot(aes(x=pos1, y=as.numeric(both.outlier), color=geography))+
-    geom_smooth()+
+    geom_smooth(size=1)+
     facet_wrap(~lg)
 ```
 
@@ -207,6 +236,7 @@ outlier.dat %>%
     geom_smooth()
 ```
 
+## recomb vs fst
 ```{r warning=FALSE}
 outlier.dat %>%
   ggplot(aes(x=log(recomb_rate), y=as.numeric(fst.outlier), color=geography))+
@@ -214,11 +244,60 @@ outlier.dat %>%
     geom_smooth()
 ```
 
+## recomb vs dxy
 ```{r warning=FALSE}
 outlier.dat %>%
-  ggplot(aes(x=fst, y=dxy, color=geography))+
+  ggplot(aes(x=log(recomb_rate), y=log(dxy+1), color=geography))+
     geom_point()+
     geom_smooth()
+```
+
+## recomb of dxy outliers x geography
+```{r warning=FALSE}
+outlier.dat %>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=dxy.outlier, y=recomb_rate, color=geography))+
+    geom_boxplot()
+
+outlier.dat %>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=ld_pac, y=recomb_rate))+
+    geom_point()
+```
+
+
+## model for above
+```{r warning=FALSE}
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=!grepl("allopatric",study))%>%
+  mutate(div.selection=!grepl("allopatric.s",study))%>%
+  with(.,glm(dxy.outlier~recomb_rate*ds*ld_pac*gene_count*gene.flow*div.selection,
+               na.action="na.omit",
+               family=binomial))
+
+summary(mod1)
+Anova(mod1)
+visreg(mod1,"recomb_rate",by="div.selection")
+
+outlier.dat %>%
+  filter(study=="allopatric.s") %>%
+  group_by(comparison) %>%
+  tally
+
+outlier.dat %>%
+  filter(study=="allopatric.d") %>%
+  group_by(comparison) %>%
+  tally
+
+
+
+```
+
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=fst.outlier, y=log(recomb_rate), color=geography))+
+    geom_boxplot()
 ```
 
 ```{r warning=FALSE}
@@ -226,7 +305,7 @@ mod1<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=!grepl("allopatric",study))%>%
   mutate(div.selection=!grepl("allopatric.s",study))%>%
-  with(.,glm(dxy.outlier~recomb_rate*ds*ld_atl*gene_count*exon*gene.flow*div.selection,
+  with(.,glm(dxy.outlier~recomb_rate*ds*ld_pac*gene_count*gene.flow*div.selection,
                na.action="na.omit",
                family=binomial))
 
@@ -236,7 +315,6 @@ visreg(mod1,"recomb_rate",by="div.selection")
 
 
 ```
-
 
 # 6. Divergence metrics vs. genomic variables
 
@@ -332,14 +410,55 @@ mod1<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=!grepl("allopatric",study))%>%
   mutate(div.selection=!grepl("allopatric.s",study))%>%
-  with(.,glm(dxy.outlier~recomb_rate*
-               gene.flow*
-               div.selection,
+  with(glm(dxy.outlier~recomb_rate*gene.flow*div.selection,
                na.action="na.omit",
                family=binomial))
 
+visreg(mod1, "recomb_rate",by="gene.flow")
+
 summary(mod1)
-visreg(mod1,"recomb_rate",by="div.selection")
+Anova(mod1)
+
+mod2<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=!grepl("allopatric",study))%>%
+  mutate(div.selection=!grepl("allopatric.s",study))%>%
+  with(glm(fst.outlier~recomb_rate*gene.flow*div.selection,
+               na.action="na.omit",
+               family=binomial))
+
+visreg(mod2, "recomb_rate",by="gene.flow")
+
+summary(mod2)
+Anova(mod2)
+
+
+
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(is.dxy.outlier=factor(dxy.outlier)) %>%
+  with(lm(pi_pac_10k~factor(is.dxy.outlier),
+               na.action="na.omit"))
+
+summary(mod1)
+visreg(mod1,"is.dxy.outlier")
+
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(is.fst.outlier=factor(fst.outlier)) %>%
+  with(lm(pi_pac_10k~factor(is.fst.outlier),
+               na.action="na.omit"))
+
+summary(mod1)
+visreg(mod1,"is.fst.outlier")
+
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(is.fst.outlier=factor(fst.outlier)) %>%
+  with(lm(recomb_rate~factor(is.fst.outlier),
+               na.action="na.omit"))
+
+
 Anova(mod1)
 Anova(mod1,type="I")
 anova(mod1)
