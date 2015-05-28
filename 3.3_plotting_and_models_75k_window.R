@@ -33,6 +33,14 @@ all.data.filt<-all.data%>%
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
 
+#extract list of outliers
+outlier.list <- outlier.dat %>%
+  filter(geography=="parapatric.d") %>%
+  filter(fst.outlier==TRUE | dxy.outlier == TRUE ) %>%
+  select(lg,pos1,pos2,study,fst.outlier,dxy.outlier)
+
+write.table(outlier.list, "sb_meta_outliers.txt")
+
 #### end magic janky outlier detection with dplyr
 
 #### FILTERING EVS
@@ -79,7 +87,6 @@ ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
 
 # dxy vs. recomb
 ggplot(data=outlier.dat,aes(x=pos1,y=recomb_rate))+
-  add_cat()+
   geom_point()+
   facet_wrap(~lg)
 
@@ -127,19 +134,46 @@ outlier.dat%>%
       facet_grid(study_com~lg)
 
 outlier.dat%>%
-  filter(lg!=19,!is.na(dxy))%>%
-  filter(grepl("allo",study)) %>% 
-  filter(grepl("con",comparison)) %>%
+  filter(lg!=19,!is.na(fst))%>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
-    ggplot(.,aes(x=pos1,y=as.numeric(dxy.outlier),color="dxy"))+
-    geom_smooth()+
-    geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
-    facet_grid(study_com~lg)
+    ggplot(.,aes(x=pos1,y=fst,color=geography))+
+    geom_smooth(se=FALSE)+  
+    #geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
+    facet_wrap(~lg)
+
+outlier.dat%>%
+  filter(lg!=19,!is.na(fst))%>%
+  #filter(!study=="catchen")%>%
+  mutate(study_com=paste(study,comparison,sep="_"))%>%
+  ggplot(.,aes(y=fst,x=study_com,fill=geography))+
+  geom_boxplot(se=FALSE)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  #geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
+  #facet_wrap(~lg)
+
+outlier.dat%>%
+  filter(lg!=19,!is.na(fst))%>%
+  mutate(study_com=paste(study,comparison,sep="_"))%>%
+  group_by(geography,study_com) %>%
+  tally(fst.outlier) %>%
+  ungroup()%>%
+  data.frame
+  ggplot(aes(y=n,x=geography))+
+  geom_boxplot()
+
+outlier.dat%>%
+  filter(lg!=19,!is.na(dxy))%>%
+  mutate(study_com=paste(study,comparison,sep="_"))%>%
+  ggplot(.,aes(x=ds,y=log(as.numeric(dxy+1)),color=geography))+
+  #geom_point()+
+  geom_hex()
+  #geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
+  #facet_wrap(~lg)
 
 outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   #filter(grepl("allo",study)) %>% 
-  filter(grepl("boo",comparison)) %>%
+  #filter(grepl("boo",comparison)) %>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
   ggplot(.,aes(x=pos1,y=dxy,color="dxy"))+
   geom_smooth()+
@@ -280,8 +314,16 @@ visreg2d(mod1,"recomb_rate","pi_pac_10k",plot.type="image")
 ## BOXPLOTS FOR DXY OUTLIERS
 outlier.dat%>%
   filter(lg!=19)%>%
-  ggplot(aes(x=dxy.outlier,y=recomb_rate, color=geography))+
-  geom_boxplot()   
+  ggplot(aes(y=as.numeric(dxy.outlier),x=pos1, color=geography))+
+  geom_smooth()+
+  facet_wrap(~lg)
+
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(y=as.numeric(fst.outlier),x=pos1, color=geography))+
+  geom_smooth()+
+  facet_wrap(~lg)
+
 
 outlier.dat%>%
   filter(lg!=19)%>%
