@@ -14,7 +14,7 @@ ev.dir<-file.path(getwd(),"evs")
 
 #stats file
 stats.dir<-paste(gsub("genome_meta_scripts","stats/stats_75k_filtered",getwd()))
-stats.file<-list.files(stats.dir,"*75k*")[1]
+stats.file<-list.files(stats.dir,"*75k*")[max(length(list.files(stats.dir,"*75k*")))]
 stats.file<-file.path(stats.dir,stats.file)
 
 #the "stats" file, specifcally an "outlier" file
