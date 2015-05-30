@@ -31,7 +31,7 @@ library("visreg")
 
 ```{r}
 
-all.data <- read.table(file=file.path("analysis_ready","stats_75k_2015-05-08.txt"), 
+all.data <- read.table(file=file.path("analysis_ready","stats_75k_2015-05-18.txt"), 
                        header=TRUE, 
                        na.strings=c("NA", "<NA>"))
 ```
@@ -112,6 +112,16 @@ outlier.dat %>%
     facet_wrap(~lg)
 ```
 
+## Gene count 
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x = pos1, y = ld_pac))+
+    geom_point(alpha = 0.01)+
+    geom_smooth(size = 1)+
+    scale_alpha(range = c(0.001, 1))+
+    facet_wrap(~lg)
+```
+
 ## fst vs. dxy
 ```{r warning=FALSE}
 ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
@@ -152,15 +162,111 @@ outlier.dat %>%
 ```{r warning=FALSE}
 outlier.dat %>%
   mutate(recomb_rate_q = as.numeric(scale(recomb_rate))) %>%
-  mutate(gene_density_q = as.numeric(scale(gene_density))) %>%
-  mutate(gene_count_q = as.numeric(scale(gene_count))) %>%
-  mutate(ks_q = as.numeric(scale(ks))) %>%
-    ggplot(aes(x=pos1,y=gene_density_q,color="gene_density"))+
-      geom_smooth(aes(x=pos1,y=recomb_rate_q,color="recomb"))+
-      geom_smooth(aes(x=pos1,y=gene_count_q,color="count"))+
-      geom_smooth(aes(x=pos1,y=ks_q,color="ks"))+
+  mutate(ld_pac_q = as.numeric(scale(ld_pac))) %>%
+  mutate(dxy_q = as.numeric(scale(dxy))) %>%
+  mutate(fst_q = as.numeric(scale(fst))) %>%
+    ggplot(aes(x=pos1,y=ld_pac_q, color="ld_pac"))+
+      geom_smooth()+
+      geom_smooth(aes(x=pos1,y=dxy_q,color="dxy"))+
+      geom_smooth(aes(x=pos1,y=fst_q,color="fst"))+
       #facet_grid(lg~.)
       facet_wrap(~lg)
+```
+
+## ld vs outlier probabilitis
+```{r warning=FALSE}
+outlier.dat %>%
+  mutate(recomb_rate_q = as.numeric(scale(recomb_rate))) %>%
+  #mutate(ld_pac_q = as.numeric(scale(ld_pac))) %>%
+  mutate(dxy_q = as.numeric(dxy.outlier)) %>%
+  mutate(fst_q = as.numeric(fst.outlier)) %>%
+    ggplot(aes(x=pos1,y=ld_pac, color="ld_pac"))+
+      geom_smooth()+
+      geom_smooth(aes(x=pos1,y=dxy_q,color="dxy"))+
+      geom_smooth(aes(x=pos1,y=fst_q,color="fst"))+
+      #facet_grid(lg~.)
+      facet_wrap(~lg)
+```
+
+```{r warning=FALSE}
+outlier.dat %>%
+    ggplot(aes(x=log(ld_pac),y=log(fst+1)))+
+      geom_point()+
+      geom_smooth()
+      #facet_grid(lg~.)
+      facet_wrap(~lg)
+      
+outlier.dat %>%
+   ggplot(aes(x=log(ld_pac),y=log(dxy+1)))+
+      geom_point()+
+      geom_smooth()
+      #facet_grid(lg~.)
+      facet_wrap(~lg)
+      
+outlier.dat %>%
+   ggplot(aes(x=log(ld_pac),y=as.numeric(dxy.outlier)))+
+      geom_point()+
+      geom_smooth()
+      #facet_grid(lg~.)
+      facet_wrap(~lg)
+      
+outlier.dat %>%
+  mutate(ld_pac_resid=reiduals(lm(ld_pac~recomb_rate))
+ggplot(aes(y=log(ld_pac),x=dxy.outlier))+
+      geom_boxplot()
+
+
+ld_pac_resid <- residuals(with(outlier.dat,lm(ld_pac~recomb_rate)))
+outlier.dat.resid <- outlier.dat %>%
+  filter(!is.na(ld_pac)) %>%
+  filter(!is.na(recomb_rate))
+  
+outlier.dat.resid$ld_pac_resid<-ld_pac_resid
+
+
+outlier.dat.resid %>%
+  ggplot(aes(y=log(ld_pac_resid),x=recomb_rate))+
+      geom_point()+
+      geom_smooth()
+
+mod1<-outlier.dat.resid%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl("allopatric.s",study)))%>%
+  with(.,glm(dxy.outlier~recomb_rate*ld_pac*pi_pac_10k*
+               gene.flow*
+               div.selection,
+               na.action="na.omit",
+               family=binomial))
+
+summary(mod1)
+
+Anova(mod1)
+
+visreg(mod1,"div.selection")
+
+mod2<-outlier.dat.resid%>%
+  filter(lg!=19)%>%
+  with(.,glm(dxy.outlier~recomb_rate*ld_pac*pi_pac_10k*
+              geography,
+               na.action="na.omit",
+               family=binomial))
+
+summary(mod2)
+Anova(mod2)
+visreg(mod2,"geography")
+
+mod3<-outlier.dat.resid%>%
+  filter(lg!=19)%>%
+  with(.,lm(fst~recomb_rate*ld_pac*pi_pac_10k*
+              geography,
+               na.action="na.omit"))
+
+summary(mod3)
+Anova(mod3)
+visreg(mod3,"geography")
+
+
 ```
 
 # Allopatric Comparisons
@@ -171,6 +277,12 @@ outlier.dat %>%
   ggplot(aes(x=pos1, y=as.numeric(fst.outlier), color=geography))+
     geom_smooth(size=1)+
     facet_wrap(~lg)
+```
+
+```{r warning=FALSE}
+outlier.dat %>%
+  ggplot(aes(x=geography, y=log(fst+1), color=comparison))+
+    geom_boxplot()
 ```
 
 ## dxy outliers by chromosome
@@ -226,13 +338,13 @@ mod1<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=!grepl("allopatric",study))%>%
   mutate(div.selection=!grepl("allopatric.s",study))%>%
-  with(.,glm(dxy.outlier~recomb_rate*ds*ld_atl*gene_count*exon*gene.flow*div.selection,
+  with(.,glm(dxy.outlier~recomb_rate*ld_pac*pi_pac_10k*gene.flow*div.selection,
                na.action="na.omit",
                family=binomial))
 
 summary(mod1)
 Anova(mod1)
-visreg(mod1,"recomb_rate",by="div.selection")
+visreg(mod1,"ld_pac",trans=exp)
 
 
 ```
