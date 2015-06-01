@@ -9,10 +9,9 @@ library("nlme")
 library("lme4")
 library("car")
 library("visreg")
-library("cats")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-05-20.txt"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-01.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -126,7 +125,7 @@ outlier.dat%>%
   filter(lg!=19,!is.na(dxy))%>%
   mutate(study_com=as.factor(paste(study,comparison,sep="_")))%>%
   filter(grepl("benlim",study))%>%
-    ggplot(.,aes(x=pos1,y=ld_pac))+
+    ggplot(.,aes(x=pos1,y=fst.outlier))+
       geom_point(aes(color="ld"))+
       geom_point(aes(x=pos1,y=fst,color="fst"))+
       #geom_line(aes(x=pos1,y=hexp1,color="hexp1"))+
@@ -134,9 +133,11 @@ outlier.dat%>%
       facet_grid(study_com~lg)
 
 outlier.dat%>%
-  filter(lg!=19,!is.na(fst))%>%
+  #filter(lg!=19,!is.na(fst))%>%
+  #filter(lg!=19,!is.na(fst))%>%
   mutate(study_com=paste(study,comparison,sep="_"))%>%
-    ggplot(.,aes(x=pos1,y=fst,color=geography))+
+  filter(grepl("whtcmn", study_com))%>%
+    ggplot(.,aes(x=pos1,y=fst,color=study_com))+
     geom_smooth(se=FALSE)+  
     #geom_smooth(aes(x=pos1,y=as.numeric(fst.outlier),color="fst"))+
     facet_wrap(~lg)

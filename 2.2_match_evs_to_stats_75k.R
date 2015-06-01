@@ -25,11 +25,11 @@ stats.file<-arrange(stats.file,study,comparison,lg,pos1)
 ##subsets each by chromosome to prevent mismatches
 
 #find the ev files
-ev.files<-list.files(ev.dir)
+ev.files <- list.files(ev.dir)
 
 #initialize matched data variable
-matched.all<-data.frame(stats.file)
-start.time<-Sys.time()
+matched.all <- data.frame(stats.file)
+start.time <- Sys.time()
 
 ###looping through all the ev files
 for (i in 1:length(ev.files)){
@@ -130,8 +130,8 @@ print(head(matched.all))
 
 #date stamp output file
 date.stamp<-paste("_",format(Sys.time(),"%Y-%m-%d"),sep="")
-file.name<-paste("stats_75k",date.stamp,".txt",sep="")
-write.table(matched.all,file=file.path(getwd(),"analysis_ready",file.name),row.names=FALSE)
+file.name<-paste("stats_75k",date.stamp,".gz",sep="")
+write.table(matched.all,file=gzfile(file.path(getwd(),"analysis_ready",file.name)),row.names=FALSE)
 
 
 
