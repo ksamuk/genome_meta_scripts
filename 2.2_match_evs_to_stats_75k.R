@@ -13,13 +13,12 @@ library("dplyr")
 ev.dir<-file.path(getwd(),"evs")
 
 #stats file
-stats.dir<-paste(gsub("genome_meta_scripts","stats/stats_75k_filtered",getwd()))
+stats.dir <- file.path("stats/75k_filtered")
 stats.file<-list.files(stats.dir,"*75k*")[max(length(list.files(stats.dir,"*75k*")))]
 stats.file<-file.path(stats.dir,stats.file)
 
 #the "stats" file, specifcally an "outlier" file
 stats.file<-read.table(file=stats.file,header=TRUE,stringsAsFactors=FALSE)
-
 stats.file<-arrange(stats.file,study,comparison,lg,pos1)
 
 ##match evs to statsfile

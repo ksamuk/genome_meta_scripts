@@ -14,7 +14,8 @@ chrom.to.num<-function(x){
 }
 
 #the directory holding the stats files (one dir above "stats" to avoid pushing big data to github)
-stats.dir<-paste(gsub("genome_meta_scripts","stats",getwd()))
+stats.dir <- file.path("stats/75k_raw")
+stats.dir.out <- file.path("stats")
 
 #read in file names
 filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*sliding*"))
@@ -25,14 +26,19 @@ filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*sliding*"))
 #output file name and directory and with data stamp
 dir.create(file.path(stats.dir, "stats_75k_filtered"), showWarnings = FALSE)
 date.stamp<-paste("_",format(Sys.time(),"%Y-%m-%d"),sep="")
-out.file.name<-file.path(stats.dir, "stats_75k_filtered",paste("stats_75k_master",date.stamp,".txt",sep=""))
+out.file.name<-file.path(stats.dir.out, "75k_filtered",paste("stats_75k_master",date.stamp,".txt",sep=""))
+
+if (file.exists(out.file.name)){
+  file.remove(out.file.name)
+}
 
 #filters out invariant sites and reformats for rbinding
 filter.fsts<-function(x){
   
   print(paste("Processing",x,"..."))
-  read.express <- paste0('zcat < ', x)
-  matched.file<-fread(read.express,header=TRUE)
+  #read.express <- paste0('zcat < ', x)
+  #matched.file<-fread(read.express,header=TRUE)
+  matched.file <- fread(x)
   
   ##filter invariant sites
   #matched.file<-matched.file[!is.na(matched.file$Fst),]
@@ -72,6 +78,7 @@ filter.fsts<-function(x){
   df.tmp$study<-study
   df.tmp$comparison<-comparison
   df.tmp$geography<-geography
+  
   #remove scaffolds
   df.tmp<-df.tmp[grep("group",df.tmp$lg),]
   
