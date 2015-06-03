@@ -24,19 +24,30 @@ is.outlier<-function(x){
   return(x>quantile(x,na.rm=TRUE,probs=0.95)[1])
 }
 
+#percentile rank of individual scores (not included)
+perc.rank <- function(x) {
+  trunc(rank(x)/length(x))
+}
+
 all.data.filt<-all.data%>%
-  group_by(comparison)%>%
+  mutate(study_com=paste0(study,comparison)) %>%
+  filter(!is.na(fst)) %>%
+  #filter(comparison == "paxton")%>%
+  group_by(study_com)%>%
   mutate(fst.outlier = is.outlier(fst))%>%
   mutate(dxy.outlier = is.outlier(dxy))%>%
-  mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE)
+  mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE) %>%
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
+
 
 #extract list of outliers
 outlier.list <- outlier.dat %>%
   filter(geography=="parapatric.d") %>%
   filter(fst.outlier==TRUE | dxy.outlier == TRUE ) %>%
   select(lg,pos1,pos2,study,fst.outlier,dxy.outlier)
+
+
 
 write.table(outlier.list, "sb_meta_outliers.txt")
 
@@ -71,7 +82,6 @@ outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.02]<-NA
 
 # fst vs. dxy
 ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
-  add_cat(lighten = 0.95)+
   geom_point(alpha=0.05)+
   geom_smooth()+
   scale_alpha(range = c(0.001, 1))
