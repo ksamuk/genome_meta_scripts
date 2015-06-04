@@ -80,41 +80,318 @@ outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.02]<-NA
 
 ############################################################################
 
+# q & d ecotype generator
+
+make.ecotype <- function (x){
+  
+  study.com.new <- "artificial"
+  
+  if (grepl("benlim",x)){
+    study.com.new <- paste0("1_benlim_",gsub("benlim","",x))
+  }
+  
+  if (grepl("catchen",x)|grepl("fer",x)|grepl("russia",x)|grepl("hohenlohe",x)){
+    study.com.new <- paste0("2_marfsh_",x)
+  }
+  
+  if (grepl("roesti",x)){
+    study.com.new <- paste0("3_lkstrm_",x)
+  }
+  
+  if (grepl("whtcmn",x)){
+    study.com.new <- paste0("4_whtcmn_",x)
+  }
+  
+  return(study.com.new)
+
+}
+
+outlier.dat<- outlier.dat %>% 
+  rowwise%>%
+  mutate(ecotype_study = make.ecotype(study_com))
 
 #### Plots of genomic variables
 
 # RECOMBINATION
 outlier.dat %>% 
-  ggplot(aes(x = pos1, y = recomb_rate, color=recomb_rate))+
-  geom_point(size=3)+
+  #ggplot(aes(x = pos1, y = recomb_rate))+
+  ggplot(aes(x = pos1, y = recomb_rate))+
+  geom_point(size=2)+
+  geom_smooth(size=1.5)+
   #geom_line()+
-  scale_colour_gradient(limits=c(0, 25), low="blue", high="red", space="Lab")+
   theme_classic()+
-  theme(panel.border = element_rect(fill = 0, colour=1))+
+  theme(panel.border = element_rect(fill = 0, colour=1),
+        text=element_text(size=18))+
   facet_wrap(~lg)
 
-# MUTATION RATE
+
+# MUTATION RATE: ds
 outlier.dat %>% 
-  ggplot(aes(x = pos1, y = ks, color=ks))+
-  geom_point(size=3)+
+  ggplot(aes(x = pos1, y = ds))+
+  geom_point(size=2)+
   #geom_line()+
-  scale_colour_gradient(limits=c(0, 1), low="blue", high="red", space="Lab")+
+  geom_smooth(size=1.5)+
   theme_classic()+
-  theme(panel.border = element_rect(fill = 0, colour=1))+
+  theme(panel.border = element_rect(fill = 0, colour=1),
+        text=element_text(size=18))+
   facet_wrap(~lg)
+
+# GENE DENSITY
+outlier.dat %>% 
+  ggplot(aes(x = pos1, y = gene_count))+
+  geom_point(size=2)+
+  #geom_line()+
+  geom_smooth(size=1.5)+
+  #scale_colour_gradient(limits=c(0, 16), low="blue", high="red", space="Lab")+
+  theme_classic()+
+  theme(panel.border = element_rect(fill = 0, colour=1),
+        text=element_text(size=18))+
+  facet_wrap(~lg)
+
+# MARINE PI
+outlier.dat %>% 
+  ggplot(aes(x = pos1, y = pi_pac_10k))+
+  geom_point(size=2)+
+  #geom_line()+
+  geom_smooth(size=1.5)+
+  #scale_colour_gradient(limits=c(0, 0.015), low="blue", high="red", space="Lab")+
+  theme_classic()+
+  theme(panel.border = element_rect(fill = 0, colour=1),
+        text=element_text(size=18))+
+  facet_wrap(~lg)
+
   
+#### PLOTS OF DIVERGENCE
 
+# FST OUTLIER
+outlier.dat %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  ggplot(aes(x = pos1, y = as.numeric(fst.outlier), color=ecotype_study))+
+  geom_smooth(size = 1, se=FALSE)+
+  theme_classic()+
+  facet_grid(ecotype_study~lg,space="free_x")
+facet_wrap(~lg)
 
-outlier.dat %>% 
-  ggplot(aes(x = pos1, y = fst, color = geography))+
-  geom_smooth(size=2, se=FALSE)+
+# DXY OUTLIER  
+outlier.dat %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  ggplot(aes(x = pos1, y = as.numeric(dxy.outlier), color=ecotype_study))+
+  geom_smooth(size = 1, se=FALSE)+
+  theme_classic()+
+  facet_grid(ecotype_study~lg,space="free_x")
   facet_wrap(~lg)
 
-outlier.dat %>% 
-  ggplot(aes(x = recomb_rate, y = as.numeric(fst.outlier), color = geography))+
-  #geom_point()+
-  geom_smooth(size=2, se=FALSE)
-  #facet_wrap(~lg)
+# DXY     
+outlier.dat %>%
+    filter(!grepl("allo", study_com)) %>%
+    filter(!grepl("para", study_com)) %>%
+    ggplot(aes(x = pos1, y = dxy, color=ecotype_study))+
+    geom_smooth(size = 1, se=FALSE)+
+    theme_classic()+
+    facet_grid(ecotype_study~lg,space="free_x")
+
+  
+# FST     
+  outlier.dat %>%
+    filter(!grepl("allo", study_com)) %>%
+    filter(!grepl("para", study_com)) %>%
+    ggplot(aes(x = pos1, y = fst, color=ecotype_study))+
+    geom_smooth(size = 1, se=FALSE)+
+    theme_classic()+
+    facet_grid(ecotype_study~lg,space="free_x")
+
+  
+# FST BOX PLOTS  
+outlier.dat %>%
+    filter(!is.na(fst)) %>%
+    filter(!is.na(dxy)) %>%
+    filter(!grepl("allo", study_com)) %>%
+    filter(!grepl("para", study_com)) %>%
+    mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+    ggplot(aes(x = reorder(study_com,fst,FUN=function(x)median(x)*-1), y = fst, fill= ecotype))+
+    geom_boxplot()+
+    #theme_classic()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    facet_grid(~ecotype,space = "free",scale="free_x")
+
+# DXY BOX PLOTS  
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  ggplot(aes(x = reorder(study_com,dxy,FUN=function(x)median(x)*-1), y = dxy, fill= ecotype))+
+  geom_boxplot()+
+  #theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  facet_grid(~ecotype,space = "free",scale="free_x")
+
+### PLOTS OF DIVERGENCE VS EVS
+
+##### RECOMBINATION
+
+# REcomb vs. FST per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = fst))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+# REcomb vs. FST outlier per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = as.numeric(fst.outlier)))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+# REcomb vs. DXY per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,dxy,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = dxy))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+# REcomb vs. DXY.outlier per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,dxy,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = as.numeric(dxy.outlier)))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+##### RECOMBINATION
+
+##### MARINE PI
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = pi_pac_10k, y = fst))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)
+
+# MARINE PI vs. FST outlier per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = pi_pac_10k, y = as.numeric(fst.outlier)))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)
+
+# MARINE PI vs. DXY per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,dxy,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = pi_pac_10k, y = dxy))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+# MARINE PI vs. DXY.outlier per comparisons
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,dxy,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = pi_pac_10k, y = as.numeric(dxy.outlier)))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+#### GENE COUNT / KS : NO PATTERN
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = gene_count, y = fst))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = ds, y = fst))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)
+
+
+#### GEOGRAPHY PLOTS
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = fst))+
+  geom_point()+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)
 
 outlier.dat %>% 
   ggplot(aes(x = fst.outlier, y = recomb_rate, color = geography))+
