@@ -386,12 +386,13 @@ outlier.dat %>%
 outlier.dat %>%
   filter(!is.na(fst)) %>%
   filter(!is.na(dxy)) %>%
+  filter(geography == "allopatric.d") %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = fst))+
   geom_point(aes(color = geography))+
   geom_smooth(method="loess",size=2)+
-  facet_wrap(~study.reorder)+
+  facet_grid(~study.reorder)+
   coord_cartesian(xlim=c(0,10))
 
 
