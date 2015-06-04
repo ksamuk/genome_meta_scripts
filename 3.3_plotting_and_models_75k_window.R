@@ -11,7 +11,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-01.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-03.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -336,8 +336,13 @@ outlier.dat%>%
 
 outlier.dat%>%
   filter(lg!=19)%>%
-  ggplot(aes(x=fst.outlier,y=recomb_rate, color=geography))+
-  geom_boxplot()  
+  ggplot(aes(x=fst.outlier,y=log(recomb_rate), color=geography))+
+  geom_boxplot() 
+
+outlier.dat%>%
+  filter(lg!=19)%>%
+  ggplot(aes(x=fst.outlier,y=log(recomb_rate), color=geography))+
+  geom_boxplot()
 ##  
 
 ## BOXPLOTS FOR DXY OUTLIERS
@@ -345,7 +350,7 @@ outlier.dat%>%
   filter(lg!=19)%>%
   ggplot(aes(x=dn,y=ds))+
   geom_point()+
-  geom_smoothmeth
+  geom_smooth
 ##     
 
 ######### DXY VS GENOMIC VARIABLES ##########

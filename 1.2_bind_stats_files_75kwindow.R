@@ -62,6 +62,12 @@ filter.fsts<-function(x){
     comparison<-strsplit(gsub(paste(stats.dir,"/",sep=""),"",x),"_")[[1]][2]
   }
   
+  if(grepl("parapatricS",study)==TRUE){
+    study<-"parapatric.s"
+    geography<-"parapatric.s"
+    comparison<-strsplit(gsub(paste(stats.dir,"/",sep=""),"",x),"_")[[1]][2]
+  }
+  
   print("Formatting for output...")
   print(study)
   print(comparison)
