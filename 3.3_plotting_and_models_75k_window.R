@@ -31,15 +31,13 @@ perc.rank <- function(x) {
 
 all.data.filt<-all.data%>%
   mutate(study_com=paste0(study,comparison)) %>%
-  filter(!is.na(fst)) %>%
   #filter(comparison == "paxton")%>%
   group_by(study_com)%>%
   mutate(fst.outlier = is.outlier(fst))%>%
   mutate(dxy.outlier = is.outlier(dxy))%>%
-  mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE) %>%
+  mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE)
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
-
 
 #extract list of outliers
 outlier.list <- outlier.dat %>%
