@@ -239,13 +239,13 @@ outlier.dat %>%
 outlier.dat %>%
   filter(!is.na(fst)) %>%
   filter(!is.na(dxy)) %>%
-  filter(!grepl("allo", study_com)) %>%
-  filter(!grepl("para", study_com)) %>%
+  #filter(!grepl("allo", study_com)) %>%
+  #filter(!grepl("para", study_com)) %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = fst))+
   geom_point()+
-  geom_smooth(method="loess",size=2)+
+  geom_smooth(method="loess",size=1.5)+
   facet_wrap(~study.reorder)+
   coord_cartesian(xlim=c(0,10))
 
@@ -389,12 +389,28 @@ outlier.dat %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = fst))+
-  geom_point()+
+  geom_point(aes(color = geography))+
   geom_smooth(method="loess",size=2)+
-  facet_wrap(~study.reorder)
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
+
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = as.numeric(fst.outlier)))+
+  geom_point(aes(color = geography))+
+  geom_smooth(method="loess",size=2)+
+  facet_wrap(~study.reorder)+
+  coord_cartesian(xlim=c(0,10))
 
 outlier.dat %>% 
-  ggplot(aes(x = fst.outlier, y = recomb_rate, color = geography))+
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  mutate(geography = reorder(geography,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = geography))+
   #geom_point()+
   geom_boxplot()
 #facet_wrap(~lg)
