@@ -1,0 +1,1 @@
+Chr	StartPos	EndPos	MidPos	TotalSites	VariableSites	Dxy	Fst	Hexp1	Hexp2
