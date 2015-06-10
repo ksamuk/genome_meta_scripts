@@ -14,32 +14,32 @@ chrom.to.num<-function(x){
 }
 
 #the directory holding the stats files
-stats.dir<-"/Users/Kieran/Documents/Science/Projects/Ph.D./Genome Meta Analysis/stats"
+stats.dir<-"stats/snp_raw"
 
 #read in file names
-filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*stats.txt"))
+filenames<-file.path(stats.dir,list.files(stats.dir,pattern="*.gz"))
 
 #headers for the bound file
 #column.names<-sapply(strsplit(list.files(stats.dir,pattern="*.txt")),"_"), function(x) x[1:2])
 
 #output file name and directory and with data stamp
-dir.create(file.path(stats.dir, "stats_filtered"), showWarnings = FALSE)
+dir.create(file.path("stats", "snp_filtered"), showWarnings = FALSE)
 date.stamp<-paste("_",format(Sys.time(),"%Y-%m-%d"),sep="")
-out.file.name<-file.path(stats.dir, "stats_filtered",paste("stats_master_variant",date.stamp,".txt",sep=""))
+out.file.name<-file.path("stats/snp_filtered",paste("stats_master_variant",date.stamp,".txt",sep=""))
 
 #filters out invariant sites and reformats for rbinding
 filter.fsts<-function(x){
   
   print(paste("Processing",x,"..."))
-  matched.file<-fread(x,header=TRUE)
+  matched.file<-data.table(read.table(x,header=TRUE))
   
   ##filter invariant sites
   matched.file<-matched.file[!is.na(matched.file$Fst),]
   matched.file<-matched.file[!matched.file$Fst==Inf,]
   
   #study and comparison names
-  study<-sapply(strsplit(filenames[x],"/"), function(x) sapply(strsplit(x[length(x)],"_"),function(x)x[1]))
-  comparison<-sapply(strsplit(filenames[x],"/"), function(x) sapply(strsplit(x[length(x)],"_"),function(x)x[2]))
+  study<-sapply(strsplit(x,"/"), function(x) sapply(strsplit(x[length(x)],"_"),function(x)x[1]))
+  comparison<-sapply(strsplit(x,"/"), function(x) sapply(strsplit(x[length(x)],"_"),function(x)x[2]))
   
   print("Formatting for output...")
   #data format
@@ -77,8 +77,3 @@ filter.fsts<-function(x){
 
 #apply above function to filename list
 lapply(filenames[1:length(filenames)],filter.fsts)
-
-
-
-
-  
