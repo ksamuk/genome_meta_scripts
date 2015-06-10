@@ -27,7 +27,7 @@ $RECYCLE.BIN/
 
 # Icon must ends with two \r.
 Icon
-
+*.pdf
 
 # Thumbnails
 ._*
@@ -36,5 +36,6 @@ Icon
 .Spotlight-V100
 .Trashes
 .Rproj.user
-.RData
-.Rhistory
+*RData*
+*Rhistory*
+*.gz

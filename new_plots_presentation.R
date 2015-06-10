@@ -239,8 +239,8 @@ outlier.dat %>%
 outlier.dat %>%
   filter(!is.na(fst)) %>%
   filter(!is.na(dxy)) %>%
-  #filter(!grepl("allo", study_com)) %>%
-  #filter(!grepl("para", study_com)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = fst))+
@@ -262,7 +262,7 @@ outlier.dat %>%
   geom_point()+
   geom_smooth(method="loess",size=2)+
   facet_wrap(~study.reorder)+
-  coord_cartesian(xlim=c(0,10))
+  coord_cartesian(xlim=c(0,5))
 
 # REcomb vs. DXY per comparisons
 
@@ -293,6 +293,28 @@ outlier.dat %>%
   geom_smooth(method="loess",size=2)+
   facet_wrap(~study.reorder)+
   coord_cartesian(xlim=c(0,10))
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  #mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = fst.outlier, y = recomb_rate, fill=study.reorder))+
+  geom_boxplot()
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  #mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,dxy,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = dxy.outlier, y = recomb_rate, fill=study.reorder))+
+  geom_boxplot()
+
+
 
 ##### RECOMBINATION
 
@@ -386,14 +408,29 @@ outlier.dat %>%
 outlier.dat %>%
   filter(!is.na(fst)) %>%
   filter(!is.na(dxy)) %>%
+  #filter(geography == "allopatric.d") %>%
+  #filter(geography == "allopatric.s") %>%
+  #filter(geography == "parapatric.d") %>%
   filter(geography == "allopatric.d") %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = recomb_rate, y = as.numeric(fst.outlier)))+
+  #geom_point(aes(color = geography))+
+  geom_smooth(method="loess",size=2, se=FALSE)+
+  facet_grid(~study_com)+
+  coord_cartesian(xlim=c(0,10),ylim=c(0,0.20))
+
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = fst))+
   geom_point(aes(color = geography))+
-  geom_smooth(method="loess",size=2)+
-  facet_grid(~study.reorder)+
+  geom_smooth(method="loess",size=2, se=FALSE)+
+  facet_wrap(~study.reorder)+
   coord_cartesian(xlim=c(0,10))
+
 
 
 outlier.dat %>%
@@ -403,18 +440,57 @@ outlier.dat %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = as.numeric(fst.outlier)))+
   geom_point(aes(color = geography))+
-  geom_smooth(method="loess",size=2)+
+  geom_smooth(method="loess",size=2, se=FALSE)+
   facet_wrap(~study.reorder)+
   coord_cartesian(xlim=c(0,10))
 
 outlier.dat %>% 
   filter(!is.na(fst)) %>%
   filter(!is.na(dxy)) %>%
-  mutate(geography = reorder(geography,fst,FUN=function(x)mean(x)*-1)) %>%
-  ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = geography))+
+  #filter(geography == "allopatric.d") %>%
+  #filter(geography == "allopatric.s") %>%
+  filter(geography == "parapatric.d") %>%
+  #filter(geography == "allopatric.d") %>%
+  mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = study_com))+
   #geom_point()+
   geom_boxplot()
-#facet_wrap(~lg)
+  #facet_grid(~geography)
+
+outlier.dat %>% 
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  #filter(geography == "allopatric.d") %>%
+  #filter(geography == "allopatric.s") %>%
+  #filter(geography == "parapatric.d") %>%
+  #filter(geography == "allopatric.d") %>%
+  #mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = study_com))+
+  #geom_point()+
+  geom_boxplot()+
+  facet_grid(~geography)
+
+outlier.dat %>% 
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  #filter(geography == "allopatric.d") %>%
+  #filter(geography == "allopatric.s") %>%
+  #filter(geography == "parapatric.d") %>%
+  #filter(geography == "allopatric.d") %>%
+  #mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = dxy.outlier, y = log(recomb_rate), fill = geography))+
+  #geom_point()+
+  geom_boxplot()
+  #facet_grid(~geography)
+
+outlier.dat %>% 
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = study_com))+
+  #geom_point()+
+  geom_boxplot()+
+  facet_grid(~geography)
 
 outlier.dat %>% 
   ggplot(aes(x = pos1, y = dxy, color = geography))+
@@ -438,4 +514,101 @@ outlier.dat %>%
   geom_smooth(size=2, se=FALSE)+
   facet_wrap(~lg)
 
+mod1<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glm(dxy.outlier~recomb_rate*
+               gene.flow*
+               div.selection,
+             na.action="na.omit",
+             family=binomial))
+
+
+summary(mod1)
+Anova(mod1)
+anova(mod1)
+
+mod.full <- mod2
+mod.full<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(fst.outlier~recomb_rate*
+               gene.flow*
+               div.selection+
+               (1|study_com),
+             na.action="na.omit",
+             family=binomial))
+
+mod.gene_flow<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(fst.outlier~recomb_rate*
+                 gene.flow+
+                 (1|study_com),
+               na.action="na.omit",
+               family=binomial))
+
+mod.selection<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(fst.outlier~recomb_rate*
+                 div.selection+
+                 (1|study_com),
+               na.action="na.omit",
+               family=binomial))
+
+mod.recomb<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(fst.outlier~recomb_rate+
+                 (1|study_com),
+               na.action="na.omit",
+               family=binomial))
+
+anova(mod.recomb,mod.selection)
+anova(mod.recomb,mod.gene_flow)
+anova(mod.recomb,mod.selection, mod.full)
+
+######### DXY
+
+mod.full<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(dxy.outlier~recomb_rate*
+                 gene.flow*
+                 div.selection+
+                 (1|study_com),
+               na.action="na.omit",
+               family=binomial))
+
+
+mod.selection<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(dxy.outlier~recomb_rate*
+                 div.selection+
+                 (1|study_com),
+               na.action="na.omit",
+               family=binomial))
+
+mod.recomb<-outlier.dat%>%
+  filter(lg!=19)%>%
+  mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
+  mutate(div.selection=as.factor(!grepl(".s",study)))%>%
+  with(.,glmer(dxy.outlier~recomb_rate+
+                 (1|study_com),
+               na.action="na.omit",
+               family=binomial))
+
+anova(mod.recomb,mod.selection, mod.full)
+
+
+anova(mod2)
 
