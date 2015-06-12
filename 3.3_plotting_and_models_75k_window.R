@@ -11,7 +11,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-03.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-11.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it

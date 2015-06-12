@@ -13,7 +13,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-03.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-11.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -102,6 +102,10 @@ make.ecotype <- function (x){
     study.com.new <- paste0("4_whtcmn_",x)
   }
   
+  if (grepl("japan",x)){
+    study.com.new <- paste0("5_japmar_",x)
+  }
+  
   return(study.com.new)
 
 }
@@ -163,37 +167,43 @@ outlier.dat %>%
   
 #### PLOTS OF DIVERGENCE
 
-# FST OUTLIER
+# FST HISTOGRAM
+outlier.dat %>%
+  ggplot(aes(x = fst, fill=geography))+
+  geom_histogram()+
+  theme_classic()+
+  facet_wrap(~geography)
+
+# FST OUTLIER GENOME
 outlier.dat %>%
   filter(!grepl("allo", study_com)) %>%
   filter(!grepl("para", study_com)) %>%
-  ggplot(aes(x = pos1, y = as.numeric(fst.outlier), color=ecotype_study))+
-  geom_smooth(size = 1, se=FALSE)+
-  theme_classic()+
-  facet_grid(ecotype_study~lg,space="free_x")
-facet_wrap(~lg)
-
-# DXY OUTLIER  
-outlier.dat %>%
-  filter(!grepl("allo", study_com)) %>%
-  filter(!grepl("para", study_com)) %>%
-  ggplot(aes(x = pos1, y = as.numeric(dxy.outlier), color=ecotype_study))+
-  geom_smooth(size = 1, se=FALSE)+
-  theme_classic()+
-  facet_grid(ecotype_study~lg,space="free_x")
-  facet_wrap(~lg)
-
-# DXY     
-outlier.dat %>%
-    filter(!grepl("allo", study_com)) %>%
-    filter(!grepl("para", study_com)) %>%
-    ggplot(aes(x = pos1, y = dxy, color=ecotype_study))+
+    ggplot(aes(x = pos1, y = as.numeric(fst.outlier), color=ecotype_study))+
     geom_smooth(size = 1, se=FALSE)+
     theme_classic()+
     facet_grid(ecotype_study~lg,space="free_x")
 
+# DXY OUTLIER  GENOME
+outlier.dat %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+    ggplot(aes(x = pos1, y = as.numeric(dxy.outlier), color=ecotype_study))+
+    geom_smooth(size = 1, se=FALSE)+
+    theme_classic()+
+    facet_grid(ecotype_study~lg,space="free_x")
+    facet_wrap(~lg)
+
+# DXY GENOME
+outlier.dat %>%
+    filter(!grepl("allo", study_com)) %>%
+    filter(!grepl("para", study_com)) %>%
+      ggplot(aes(x = pos1, y = dxy, color=ecotype_study))+
+      geom_smooth(size = 1, se=FALSE)+
+      theme_classic()+
+      facet_grid(ecotype_study~lg,space="free_x")
+
   
-# FST     
+# FST GENOME
   outlier.dat %>%
     filter(!grepl("allo", study_com)) %>%
     filter(!grepl("para", study_com)) %>%
