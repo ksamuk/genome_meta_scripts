@@ -35,7 +35,8 @@ all.data.filt<-all.data%>%
   group_by(study_com)%>%
   mutate(fst.outlier = is.outlier(fst))%>%
   mutate(dxy.outlier = is.outlier(dxy))%>%
-  mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE)
+  mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE)%>%
+  mutate(hs = (hexp1+hexp2)/2)
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
 
@@ -79,10 +80,11 @@ outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.02]<-NA
 #### VISUALIZING EVS
 
 # fst vs. dxy
-ggplot(data=outlier.dat,aes(x=fst,y=dxy))+
-  geom_point(alpha=0.05)+
+ggplot(data=outlier.dat,aes(x=pos1,y=hs, color=study_com))+
+  #geom_point(alpha=0.05)+
   geom_smooth()+
-  scale_alpha(range = c(0.001, 1))
+  scale_alpha(range = c(0.001, 1))+
+  facet_wrap(~lg)
 
 # dxy vs ds
 ggplot(data=outlier.dat,aes(x=dxy.outlier,y=ks))+

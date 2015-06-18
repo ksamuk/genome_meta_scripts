@@ -42,6 +42,10 @@ all.data.filt<-all.data%>%
 
 outlier.dat<-data.frame(ungroup(all.data.filt))
 
+#inject japan as no gene flow
+
+outlier.dat$geography[outlier.dat$study == "japan"] <- "allopatric.d"
+
 
 #extract list of outliers
 outlier.list <- outlier.dat %>%
@@ -226,6 +230,16 @@ outlier.dat %>%
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     facet_grid(~ecotype,space = "free",scale="free_x")
 
+outlier.dat %>%
+  filter(!is.na(fst)) %>%
+  filter(!is.na(dxy)) %>%
+  filter(!grepl("allo", study_com)) %>%
+  filter(!grepl("para", study_com)) %>%
+  mutate(ecotype = substr(ecotype_study,1,1) ) %>%
+  ggplot(aes(x = fst, fill= ecotype))+
+  geom_histogram()
+  #theme_classic()+
+
 # DXY BOX PLOTS  
 
 outlier.dat %>%
@@ -234,7 +248,7 @@ outlier.dat %>%
   filter(!grepl("allo", study_com)) %>%
   filter(!grepl("para", study_com)) %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
-  ggplot(aes(x = reorder(study_com,dxy,FUN=function(x)median(x)*-1), y = dxy, fill= ecotype))+
+  ggplot(aes(x = reorder(study_com,dxy,FUN=function(x)median(x)*-1), y = log(dxy), fill= ecotype))+
   geom_boxplot()+
   #theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
@@ -421,7 +435,7 @@ outlier.dat %>%
   #filter(geography == "allopatric.d") %>%
   #filter(geography == "allopatric.s") %>%
   #filter(geography == "parapatric.d") %>%
-  filter(geography == "allopatric.d") %>%
+  #filter(geography == "allopatric.d") %>%
   mutate(ecotype = substr(ecotype_study,1,1) ) %>%
   mutate(study.reorder = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = recomb_rate, y = as.numeric(fst.outlier)))+
@@ -461,7 +475,7 @@ outlier.dat %>%
   #filter(geography == "allopatric.s") %>%
   filter(geography == "parapatric.d") %>%
   #filter(geography == "allopatric.d") %>%
-  mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
+  mutate(study_com = reorder(study_com,fst.outlier,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = study_com))+
   #geom_point()+
   geom_boxplot()
@@ -539,12 +553,15 @@ summary(mod1)
 Anova(mod1)
 anova(mod1)
 
+(-1)/((outlier.dat$hs)^2) %>% hist
+
 mod.full <- mod2
 mod.full<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
   mutate(div.selection=as.factor(!grepl(".s",study)))%>%
-  with(.,glmer(fst.outlier~recomb_rate*
+  with(.,glmer(fst.outlier~log(hs)+
+                recomb_rate*
                gene.flow*
                div.selection+
                (1|study_com),
@@ -555,7 +572,8 @@ mod.gene_flow<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
   mutate(div.selection=as.factor(!grepl(".s",study)))%>%
-  with(.,glmer(fst.outlier~recomb_rate*
+  with(.,glmer(fst.outlier~hs+
+                 recomb_rate*
                  gene.flow+
                  (1|study_com),
                na.action="na.omit",
@@ -565,7 +583,8 @@ mod.selection<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
   mutate(div.selection=as.factor(!grepl(".s",study)))%>%
-  with(.,glmer(fst.outlier~recomb_rate*
+  with(.,glmer(fst.outlier~hs+
+                 recomb_rate*
                  div.selection+
                  (1|study_com),
                na.action="na.omit",
@@ -575,7 +594,8 @@ mod.recomb<-outlier.dat%>%
   filter(lg!=19)%>%
   mutate(gene.flow=as.factor(!grepl("allopatric",study)))%>%
   mutate(div.selection=as.factor(!grepl(".s",study)))%>%
-  with(.,glmer(fst.outlier~recomb_rate+
+  with(.,glmer(fst.outlier~hs+
+                 recomb_rate+
                  (1|study_com),
                na.action="na.omit",
                family=binomial))
