@@ -71,9 +71,9 @@ write.table(null.distances, file="null_snp_distances.txt", row.names = FALSE)
 #### START
 
 null.distances <- fread("null_snp_distances.txt")
-null.distances <- null.distances[,-1,with=FALSE]
-col.names <- c("mean.distance", "lg", "study_com")
-setnames(null.distances, col.names)
+#null.distances <- null.distances[,-1,with=FALSE]
+#col.names <- c("mean.distance", "lg", "study_com")
+#setnames(null.distances, col.names)
 
 null.distances %>%
   filter(study_com == "benlim_lq") %>%
@@ -132,11 +132,14 @@ add.geo <- function (x) {
     geography<-"parapatric.s"
   }
   
+  if(grepl("japan",x)==TRUE){
+    geography<-"allopatric.d"
+  }
+  
   return(geography)
   
 }
 
-null.distances$outlier <- FALSE
 names(dist.outliers)[1]<- "mean.distance"
 
 outlier.mean.distances <- dist.outliers %>%
@@ -145,47 +148,79 @@ outlier.mean.distances <- dist.outliers %>%
   summarise(outlier.mean.distance = mean(mean.distance, na.rm = TRUE)) %>%
   ungroup
 
-# calculate z scores and p values for each outlier mean
-
-null.distances.standardized <- null.distances %>%
-  group_by(study_com, lg) %>%
-  summarise(mu.distance = mean(mean.distance), sigma.distance = sd(mean.distance)) %>%
-  left_join(outlier.mean.distances, copy=TRUE) %>%
-  mutate(outlier.z = (outlier.mean.distance - mu.distance)/sigma.distance) %>%
-  mutate(outlier.p = pnorm(-abs(outlier.z)))
-
-null.distances.standardized$geography <- sapply(null.distances.standardized$study_com, add.geo)
-  
-null.distances.standardized %>%
-  ggplot(aes(x = reorder(study_com,outlier.mean.distance/mu.distance,FUN=function(x)median(x)*-1), y = outlier.mean.distance/mu.distance, fill = geography))+
-  geom_boxplot()+
-  facet_grid(~geography, scales = "free_x")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-null.distances.standardized %>%
-  filter(outlier.z>-100)%>%
-  ggplot(aes(x = geography, y = outlier.z, fill = geography))+
-  geom_boxplot()+
-  facet_grid(~geography, scales = "free_x")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-
-
-
-all.distances <- rbind(null.distances,dist.outliers) %>%
-  arrange(study_com, lg)
-
-all.distances$geography <- add.geo(kieran12
-                                   stances$study_com)
-
 null.distances %>%
-  filter(study_com == "roesti_misty") %>%
-  ggplot(aes(x = mean.distance))+
-  geom_histogram()+
+  filter(study_com == "whtcmn_group1")%>%
+   ggplot(aes(x=mean.distance))+
+   geom_histogram()+
+    facet_wrap(~lg)
+
+snp.file %>%
+  filter(study_com == "japan_group1")%>%
+  ggplot(aes(x=pos, y=fst, color=fst.outlier))+
+  geom_point()+
   facet_wrap(~lg)
 
-null.distances.standardized %>%
-  filter(study_com == "roesti_boot")
+# calculate z scores and p values for each outlier mean
+
+dist.df <- null.distances %>%
+  group_by(study_com, lg) %>%
+  summarise(null.05 = quantile(mean.distance,na.rm=TRUE,probs=0.05)[1], null.mean = mean(mean.distance)) %>%
+  left_join(outlier.mean.distances, copy=TRUE) %>%
+  mutate(dist.diff = null.mean - outlier.mean.distance, clustered = outlier.mean.distance <= null.05)
   
+
+dist.df$geography <- sapply(dist.df$study_com, add.geo)
+  
+dist.df %>%
+  ggplot(aes(x = study_com, y = log(dist.diff+1), fill = geography))+
+  geom_boxplot()+
+  facet_grid(~geography, scales = "free_x")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+dist.df %>%
+  ggplot(aes(x = study_com, y = log(dist.diff+1), fill = geography))+
+  geom_boxplot()+
+  facet_grid(~geography, scales = "free_x")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+dist.df %>%
+  ggplot(aes(x = geography, y = dist.diff, fill = geography))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+dist.summary <- dist.df %>%
+  group_by(study_com) %>%
+  summarise(avg.clustering = mean(dist.diff))
+  
+dist.summary$geography <- sapply(dist.summary$study_com, add.geo)
+
+dist.summary %>%
+  ggplot(aes(x = geography, y = avg.clustering, fill = geography))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+cluster.tally <- dist.df %>%
+  group_by(geography, study_com)%>%
+  tally(as.numeric(clustered))
+
+cluster.lgs <- dist.df %>%
+  group_by(geography, study_com) %>%
+  mutate(num.lg = length(unique(lg))) %>%
+  ungroup %>%
+  select(geography, study_com, num.lg)
+  
+cluster.tally <- left_join(cluster.tally, cluster.lgs)
+
+cluster.tally <- cluster.tally %>%
+  mutate(p.clustered = n/num.lg)
+
+cluster.tally %>%
+  ggplot(aes(x = geography, y = p.clustered, color = geography))+
+  geom_point()
+
+cluster.tally %>%
+  with(lm(p.clustered ~ geography)) %>%
+  anova
+
 
   
