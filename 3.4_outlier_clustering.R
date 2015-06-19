@@ -27,7 +27,7 @@ snp.file<-snp.file%>%
 
 sample_sites <- function (gen.pos, num.outliers) {
   
-  site.sample <- gen.pos %>% sample_n(num.outliers) %>% arrange(gen.pos) %>% select(gen.pos) %>% with(as.numeric(gen.pos)) %>% mean(na.rm = TRUE)
+  site.sample <- gen.pos %>% sample_n(num.outliers) %>% arrange(gen.pos) %>% select(gen.pos) %>% with(as.numeric(gen.pos)) %>% diff %>% mean(na.rm = TRUE)
   return(site.sample)
   
 }
@@ -45,7 +45,7 @@ permute_distances_snp_list <- function(x, num.samples){
     
     num.outliers <- sum(as.numeric(dist.sub.lg$fst.outlier), na.rm = TRUE)
     
-    if (num.outliers > 0){
+    if (num.outliers > 1){
       
       mean.distances.lg <- replicate(num.samples, sample_sites(dist.sub.lg, num.outliers))
       mean.distances.lg.df <- data.frame(mean.distance = mean.distances.lg)
@@ -67,6 +67,8 @@ null.distances <- mclapply(split.df, permute_distances_snp_list, num.samples = 1
 null.distances <- do.call("rbind", null.distances)
 rownames(null.distances) <- NULL
 write.table(null.distances, file="null_snp_distances.txt", row.names = FALSE)
+
+#### START
 
 null.distances <- fread("null_snp_distances.txt")
 null.distances <- null.distances[,-1,with=FALSE]
@@ -140,24 +142,50 @@ names(dist.outliers)[1]<- "mean.distance"
 outlier.mean.distances <- dist.outliers %>%
   select(study_com, lg, mean.distance) %>%
   group_by(study_com, lg) %>%
-  summarise(mean.distance = mean(mean.distance, na.rm = TRUE)) %>%
+  summarise(outlier.mean.distance = mean(mean.distance, na.rm = TRUE)) %>%
   ungroup
 
-outlier.mean.distances 
+# calculate z scores and p values for each outlier mean
 
-null.distances <- null.distances %>%
-  select(study_com, lg, mean.distance, outlier)
+null.distances.standardized <- null.distances %>%
+  group_by(study_com, lg) %>%
+  summarise(mu.distance = mean(mean.distance), sigma.distance = sd(mean.distance)) %>%
+  left_join(outlier.mean.distances, copy=TRUE) %>%
+  mutate(outlier.z = (outlier.mean.distance - mu.distance)/sigma.distance) %>%
+  mutate(outlier.p = pnorm(-abs(outlier.z)))
+
+null.distances.standardized$geography <- sapply(null.distances.standardized$study_com, add.geo)
+  
+null.distances.standardized %>%
+  ggplot(aes(x = reorder(study_com,outlier.mean.distance/mu.distance,FUN=function(x)median(x)*-1), y = outlier.mean.distance/mu.distance, fill = geography))+
+  geom_boxplot()+
+  facet_grid(~geography, scales = "free_x")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+null.distances.standardized %>%
+  filter(outlier.z>-100)%>%
+  ggplot(aes(x = geography, y = outlier.z, fill = geography))+
+  geom_boxplot()+
+  facet_grid(~geography, scales = "free_x")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
 
 all.distances <- rbind(null.distances,dist.outliers) %>%
   arrange(study_com, lg)
 
-all.distances$geography <- add.geo(all.distances$study_com)
+all.distances$geography <- add.geo(kieran12
+                                   stances$study_com)
 
 null.distances %>%
-  filter(study_com == "benlim_lq") %>%
-  ggplot(aes(x = mean.distance, color = outlier))+
+  filter(study_com == "roesti_misty") %>%
+  ggplot(aes(x = mean.distance))+
   geom_histogram()+
   facet_wrap(~lg)
 
+null.distances.standardized %>%
+  filter(study_com == "roesti_boot")
+  
 
   
