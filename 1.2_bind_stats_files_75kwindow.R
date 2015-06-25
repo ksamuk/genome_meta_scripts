@@ -97,6 +97,7 @@ filter.fsts<-function(x){
     write.table(df.tmp,file=out.file.name,row.names=FALSE,append=TRUE,col.names=FALSE)
   }else{
     print("Master file does not exist, creating new file...")
+    dir.create('stats/75k_filtered/')
     write.table(df.tmp,file=out.file.name,row.names=FALSE)
   }
 

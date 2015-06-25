@@ -13,7 +13,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-11.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-14.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -44,18 +44,8 @@ outlier.dat<-data.frame(ungroup(all.data.filt))
 
 #inject japan as no gene flow
 
-outlier.dat$geography[outlier.dat$study == "japan"] <- "allopatric.d"
-
-
-#extract list of outliers
-outlier.list <- outlier.dat %>%
-  filter(geography=="parapatric.d") %>%
-  filter(fst.outlier==TRUE | dxy.outlier == TRUE ) %>%
-  select(lg,pos1,pos2,study,fst.outlier,dxy.outlier)
-
-
-
-write.table(outlier.list, "sb_meta_outliers.txt")
+outlier.dat$geography[outlier.dat$study == "japan"] <- "parapatric.d"
+outlier.dat$study_com[outlier.dat$study_com == "japangroup1"] <- "parapatric.djapangroup1"
 
 #### end magic janky outlier detection with dplyr
 
@@ -122,6 +112,7 @@ outlier.dat<- outlier.dat %>%
 
 # RECOMBINATION
 outlier.dat %>% 
+  filter(lg == 2) %>%
   #ggplot(aes(x = pos1, y = recomb_rate))+
   ggplot(aes(x = pos1, y = recomb_rate))+
   geom_point(size=2)+
@@ -129,8 +120,8 @@ outlier.dat %>%
   #geom_line()+
   theme_classic()+
   theme(panel.border = element_rect(fill = 0, colour=1),
-        text=element_text(size=18))+
-  facet_wrap(~lg)
+        text=element_text(size=18))
+  #facet_wrap(~lg)
 
 
 # MUTATION RATE: ds
@@ -173,18 +164,36 @@ outlier.dat %>%
 
 # FST HISTOGRAM
 outlier.dat %>%
-  ggplot(aes(x = fst, fill=geography))+
+  ggplot(aes(y = fst, x = study_com, fill = geography))+
+  geom_boxplot()+
+  theme_classic()+
+  facet_wrap(~geography, scale = "free_x")+
+  theme(text = element_text(size=28))
+
+outlier.dat %>%
+  ggplot(aes(x = fst, fill = study_com))+
   geom_histogram()+
   theme_classic()+
-  facet_wrap(~geography)
+  theme(legend.position = "none")+
+  facet_wrap(~geography, scale = "free")+
+  theme(text = element_text(size=10))
+
+outlier.dat %>%
+  with(unique(study_com))
+  group_by(geography,study_com) %>%
+  tally()
+  
+  
+  ggplot(aes(x = pos1, y = as.numeric(fst.outlier)))+
+  geom_point(size = 3)+
+  geom_smooth(size = 2, se = FALSE)+
+  theme_classic()+
+  theme(text = element_text(size=28))+
+  
+  facet_wrap(~lg)
 
 # FST OUTLIER GENOME
-outlier.dat %>%
-  filter(!grepl("allo", study_com)) %>%
-  filter(!grepl("para", study_com)) %>%
-    ggplot(aes(x = pos1, y = as.numeric(fst.outlier), color=ecotype_study))+
-    geom_smooth(size = 1, se=FALSE)+
-    theme_classic()+
+
     facet_grid(ecotype_study~lg,space="free_x")
 
 # DXY OUTLIER  GENOME
@@ -475,7 +484,7 @@ outlier.dat %>%
   #filter(geography == "allopatric.s") %>%
   filter(geography == "parapatric.d") %>%
   #filter(geography == "allopatric.d") %>%
-  mutate(study_com = reorder(study_com,fst.outlier,FUN=function(x)mean(x)*-1)) %>%
+  mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = study_com))+
   #geom_point()+
   geom_boxplot()
@@ -492,7 +501,10 @@ outlier.dat %>%
   ggplot(aes(x = fst.outlier, y = log(recomb_rate), fill = study_com))+
   #geom_point()+
   geom_boxplot()+
+  theme_bw()+
+  theme(legend.position = "none")+
   facet_grid(~geography)
+  
 
 outlier.dat %>% 
   filter(!is.na(fst)) %>%
@@ -504,7 +516,9 @@ outlier.dat %>%
   #mutate(study_com = reorder(study_com,fst,FUN=function(x)mean(x)*-1)) %>%
   ggplot(aes(x = dxy.outlier, y = log(recomb_rate), fill = geography))+
   #geom_point()+
+  theme_bw()+
   geom_boxplot()
+
   #facet_grid(~geography)
 
 outlier.dat %>% 
@@ -523,7 +537,7 @@ outlier.dat %>%
 
 outlier.dat %>% 
   filter(!is.na(fst)) %>%
-  ggplot(aes(x = pos1, y = as.numeric(fst.outlier), color = study_com))+
+  ggplot(aes(x = fst.outlier, y = as.numeric(fst.outlier), color = geography))+
   geom_smooth(se=FALSE)+
   facet_wrap(~lg)
 

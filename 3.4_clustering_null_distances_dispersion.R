@@ -6,7 +6,6 @@ library(parallel)
 
 # read in snp file
 snp.file <- list.files(file.path("stats/snp_filtered"),pattern=".txt$", full.names = TRUE)
-snp.file <- "stats/snp_filtered/stats_master_variant_2015-06-21.txt"
 snp.file <- fread(snp.file, header = TRUE)
 
 # remove weird outliers
@@ -27,7 +26,14 @@ snp.file<-snp.file%>%
 
 sample_sites <- function (gen.pos, num.outliers) {
   
-  site.sample <- gen.pos %>% sample_n(num.outliers) %>% arrange(gen.pos) %>% select(gen.pos) %>% with(as.numeric(gen.pos)) %>% diff %>% mean(na.rm = TRUE)
+  site.sample <- gen.pos %>% 
+    sample_n(num.outliers) %>% 
+    arrange(gen.pos) %>% 
+    select(gen.pos) %>% 
+    with(as.numeric(gen.pos)) %>% 
+    diff %>% 
+    mean(na.rm = TRUE)
+  
   return(site.sample)
   
 }

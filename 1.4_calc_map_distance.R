@@ -4,16 +4,17 @@ library(data.table)
 library(dplyr)
 
 # read in snp file
-snp.file <- list.files(file.path("stats/snp_filtered"), pattern=".txt$", full.names = TRUE)
+snp.file <- "stats/snp_filtered/stats_master_variant_2015-06-21.txt"
 snp.file <- fread(snp.file)
 
-
 snp.file$gen.pos <- NA
+snp.file$pos <- as.numeric(snp.file$pos)
 
 # read in genetic map data
-map.file <- list.files(file.path("ev_prep_scripts"), pattern=".txt$", full.names = TRUE)
+map.file <- list.files(file.path("ev_prep_scripts"), pattern="roesti_recomb_estimates.txt", full.names = TRUE)
 map.file <- read.table(map.file,header=TRUE)
 names(map.file)[1] <- "lg"
+
 
 # calculate genetic distance
 
@@ -62,5 +63,5 @@ for (i in unique(snp.file$lg)){
   
 snp.file$gen.pos <- snp.map.position
 
-snp.file.out <- list.files(file.path("stats/snp_filtered"),pattern=".txt$", full.names = TRUE)
+snp.file.out <- gsub(".txt",".genpos.txt",snp.file)
 write.table(snp.file, file = snp.file.out, row.names = FALSE)
