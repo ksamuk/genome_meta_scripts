@@ -29,7 +29,7 @@ is_taj_outlier <- function(x){
 
 taj.dat <- taj.dat %>%
   mutate(id = paste0(study, location, ecotype)) %>%
-  filter(taj.dat$n.sites != 0) %>%
+  filter(taj.dat$n.sites > 2) %>%
   group_by(id) %>%
   mutate(outlier = is_taj_outlier(tajd)) %>%
   ungroup() %>%
@@ -38,8 +38,8 @@ taj.dat <- taj.dat %>%
 
 taj.dat %>%
   filter(study == "benlim") %>%
-  filter(location == "Pax") %>%
-  filter(ecotype == "B") %>%
+  #filter(location == "Pax") %>%
+  #filter(ecotype == "B") %>%
   filter(outlier == TRUE) %>%
   ggplot(aes(y = tajd, x = pos1, color = taj.class)) +
   geom_point() +
