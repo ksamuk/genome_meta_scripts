@@ -11,7 +11,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-11.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-14.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -20,8 +20,9 @@ hist(all.data$fst)
 hist(all.data$dxy)
 
 #### magic janky outlier detection with dplyr
-is.outlier<-function(x){
-  return(x>quantile(x,na.rm=TRUE,probs=0.95)[1])
+is.outlier <- function(x){
+  x95 <- quantile(x, na.rm = TRUE, probs = 0.95)[1]
+  return(x >=x95)
 }
 
 #percentile rank of individual scores (not included)

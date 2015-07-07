@@ -21,11 +21,10 @@ make_taj_class <- function(x){
 
 # classify windows as outliers (pos or neg)
 is_taj_outlier <- function(x){
-  if (x >= quantile(x, na.rm = TRUE, probs = 0.95)[1]){
-    return(TRUE)
-  }else if(x <= quantile(x, na.rm = TRUE, probs = 0.05)[1]){
-    return(TRUE)
-  }
+  x5 <- quantile(x, na.rm = TRUE, probs = 0.05)[1]
+  x95 <- quantile(x, na.rm = TRUE, probs = 0.95)[1]
+  
+  return(x <= x5 | x >=x95)
 }
 
 taj.dat <- taj.dat %>%
@@ -33,11 +32,11 @@ taj.dat <- taj.dat %>%
   filter(taj.dat$n.sites != 0) %>%
   group_by(id) %>%
   mutate(outlier = is_taj_outlier(tajd)) %>%
-  mutate(taj.class = make_taj_class(tajd))
+  ungroup() %>%
+  mutate(taj.class =  sapply(tajd,make_taj_class))
 
 
 taj.dat %>%
-   %>%
   filter(study == "benlim") %>%
   filter(location == "Pax") %>%
   filter(ecotype == "B") %>%
