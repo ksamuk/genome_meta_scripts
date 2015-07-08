@@ -4,11 +4,14 @@ library(data.table)
 library(dplyr)
 
 # read in snp file
-snp.file <- "stats/snp_filtered/stats_master_variant_2015-06-21.txt"
-snp.file <- fread(snp.file)
+snp.file.name <- "stats/snp_filtered/stats_master_variant_loose_2015-07-06.filt.txt"
+snp.file <- fread(snp.file.name)
 
 snp.file$gen.pos <- NA
 snp.file$pos <- as.numeric(snp.file$pos)
+
+snp.file <- snp.file %>%
+  arrange(lg,pos)
 
 # read in genetic map data
 map.file <- list.files(file.path("ev_prep_scripts"), pattern="roesti_recomb_estimates.txt", full.names = TRUE)
@@ -63,5 +66,5 @@ for (i in unique(snp.file$lg)){
   
 snp.file$gen.pos <- snp.map.position
 
-snp.file.out <- gsub(".txt",".genpos.txt",snp.file)
+snp.file.out <- gsub(".txt",".genpos.txt",snp.file.name)
 write.table(snp.file, file = snp.file.out, row.names = FALSE)
