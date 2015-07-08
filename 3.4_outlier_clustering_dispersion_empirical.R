@@ -4,33 +4,35 @@ library(data.table)
 library(dplyr)
 library(parallel)
 library(ggplot2)
+library(reshape2)
 
 # read in snp file
-snp.file <- list.files(file.path("stats/snp_filtered"),pattern=".txt$", full.names = TRUE)
-snp.file <- fread(snp.file)
+snp.file <- list.files(file.path("stats/snp_filtered"),pattern="genpos", full.names = TRUE)
+snp.file <- read.table(snp.file, header = TRUE, stringsAsFactors = FALSE)
 
 # remove weird outliers
 snp.file[!is.na(snp.file$fst) & snp.file$fst<0, ]$fst <- NA
 
 # find outliers
 
-is.outlier<-function(x){
-  return(x >= quantile(x,na.rm=TRUE,probs=0.95)[1])
+is.outlier <- function(x){
+  x95 <- quantile(x, na.rm = TRUE, probs = 0.95)[1]
+  return(x >=x95)
 }
 
 snp.file<-snp.file%>%
   group_by(study_com)%>%
   mutate(fst.outlier = is.outlier(fst)) %>% 
+  mutate(dxy.outlier = is.outlier(dxy)) %>% 
+  mutate(both.outlier = dxy.outlier & fst.outlier) %>% 
   ungroup
-
-############### NEW APPROACH: PERMUTATION FTW
 
 calculate_dispersion <- function (lg) {
   
 dispersion <- lg %>%
   select(gen.pos) %>% 
   arrange(gen.pos) %>%
-  .[,1] %>% 
+  unlist %>% 
   diff %>% 
   (function(x) return(var(x,na.rm = TRUE)/mean(x,na.rm = TRUE)))
 
@@ -44,9 +46,9 @@ calculate_dispersion_outliers <- function (lg) {
   end <- min(lg$gen.pos)
   
   outlier.positions <- lg %>% 
-    filter(fst.outlier == TRUE)%>%
+    filter(both.outlier == TRUE)%>%
     select(gen.pos) %>%
-    .[,1]
+    unlist
   outlier.positions <- c(start, outlier.positions, end)
   
   outlier.dispersion <- outlier.positions %>%
@@ -59,10 +61,59 @@ calculate_dispersion_outliers <- function (lg) {
 }
 
 test <- data.frame(gen.pos = c(2000,1,3,10,1000,1001,1100,5000,6000,5400,500,501,503,504,505), 
-                   fst.outlier = c(rep(FALSE, 10), rep(TRUE,5)))
+                   both.outlier = c(rep(FALSE, 10), rep(TRUE,5)))
 
 calculate_dispersion(test)
 calculate_dispersion_outliers(test)
+
+dispersion.snps <- snp.file %>%
+  group_by(study_com, lg) %>%
+  do (snp.disp = calculate_dispersion(.))
+
+dispersion.outliers <- snp.file %>%
+  group_by(study_com, lg) %>%
+  do (out.disp = calculate_dispersion_outliers(.))
+
+dispersion.outliers$out.disp <- unlist(dispersion.outliers$out.disp)
+dispersion.snps$snp.disp <- unlist(dispersion.snps$snp.disp)
+
+dispersion.dat <- left_join(dispersion.outliers, dispersion.snps)
+
+dispersion.dat$geography <- sapply(dispersion.dat$study_com, add.geo)
+
+dispersion.dat <- melt(dispersion.dat, id.vars =c("study_com","geography","lg"), variable.name = "disp.type", value.name = "disp")
+
+dispersion.dat %>%
+  ggplot(aes(y= disp, x = study_com, color = disp.type))+
+  geom_boxplot()+
+  facet_grid(~geography)
+
+
+######################################### OLD STUFF
+
+
+dispersion.df <- data.frame(study_com = NA, lg = NA, disp.snps = NA, disp.outliers = NA)
+
+for (i in unique(snp.file$study_com)){
+  snp.file.sub <- snp.file %>%
+    filter(study_com == i) 
+  
+  for (j in unique(snp.file.sub$lg)){
+    snp.file.sub.lg <- snp.file %>%
+      filter(lg == j)
+    
+    disp.snps <- calculate_dispersion(snp.file.sub.lg)
+    disp.outliers <- calculate_dispersion_outliers(snp.file.sub.lg)
+    
+    disp.lg <- data.frame(study_com = i, lg = j, disp.snps = disp.snps, disp.outliers = disp.outliers)
+    dispersion.df <- rbind(dispersion.df, disp.lg)
+  }
+  
+}
+by.lg <- split(snp.file, snp.file$study_com) 
+
+
+##############################
 
 permute_distances_snp_list <- function(x, num.samples){
   
@@ -116,7 +167,7 @@ null.distances %>%
 ################# calc distances between outliers
 
 snp.outliers <- snp.file %>%
-  filter(fst.outlier == TRUE) 
+  filter(both.outlier == TRUE) 
 
 dist.outliers <- data.frame()
 

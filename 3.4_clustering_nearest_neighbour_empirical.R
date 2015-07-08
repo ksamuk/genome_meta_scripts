@@ -14,8 +14,9 @@ snp.file[!is.na(snp.file$fst) & snp.file$fst<0, ]$fst <- NA
 
 # find outliers
 
-is.outlier<-function(x){
-  return(x >= quantile(x,na.rm=TRUE,probs=0.95)[1])
+is.outlier <- function(x){
+  x95 <- quantile(x, na.rm = TRUE, probs = 0.95)[1]
+  return(x >=x95)
 }
 
 snp.file$fst <- as.numeric(snp.file$fst)
@@ -27,7 +28,7 @@ snp.file<-snp.file%>%
 
 str(snp.file)
 
-############### NEW APPROACH: PERMUTATION FTW
+# calculate nn dist
 
 nndist.lg <- function (lg.df) {
   
