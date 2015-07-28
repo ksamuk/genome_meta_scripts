@@ -16,6 +16,7 @@ chrom.to.num<-function(x){
 # get the taj d files
 
 file.folder <- "ev_prep_scripts/tajimasD"
+file.remove(file.path(getwd(),"ev_prep_scripts/tajimasD/tajimasD.combined.D"))
 tajd.files <- list.files(file.folder, full.names = TRUE)
 
 # bind the files together
@@ -46,23 +47,15 @@ for (i in 1:length(tajd.files)){
   
   # add in window start pos
   
-  file.current$pos1 <- file.current$BIN_START
-  file.current$pos2 <- file.current$BIN_START + 74999
+  file.current$pos1 <- file.current$BIN_START - 75000
+  file.current$pos2 <- file.current$BIN_START - 1
   
   # format for binding
   tajima.list[[i]] <- data.frame(study = study, location = location, ecotype = ecotype, lg = file.current$CHROM, pos1 = file.current$pos1, pos2 = file.current$pos2, n.sites = file.current$N_SNPS , tajd = file.current$TajimaD)
 }
 
 tajd.out <- do.call("rbind", tajima.list)
+tajd.out <- tajd.out[complete.cases(tajd.out),]
 
-write.table(tajd.out, file = "analysis_ready/tajimasD.combined.D")
+write.table(tajd.out, file = "ev_prep_scripts/tajimasD/tajimasD.combined.D")
 
-tajd.out %>%
-  mutate(id = paste0(study, location,ecotype)) %>% class
-
-data.frame(tajd=rnorm(100),pos2=rnorm(100))%>%
-  ggplot(.,aes(x = tajd, y = pos2)) %>%
-  geom_point() %>%
-  facet_wrap(~id)
-
-View(tajd.out)
