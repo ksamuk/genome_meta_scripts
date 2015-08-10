@@ -149,7 +149,9 @@ match_evs <- function(stats.file.name){
   matched.all$ds[matched.all$ds >= 1] <- NA
   # gene_count
   matched.all$gene_count[matched.all$gene_count >= 20] <- NA
-
+  # no lg 19
+  matched.all <- matched.all %>%
+    filter(lg!=19)
   # fit model
   
   model.out <- glm(as.numeric(both.outlier) ~ recomb_rate * gene_count * ds,
@@ -189,8 +191,17 @@ coeff.dat <- coeff.dat[!is.na(coeff.dat$recomb_rate),]
 coeff.dat <- coeff.dat %>%
   mutate(group = paste0(geography,"_",ecology))
 
-#permute mean for parapatric d
+# write to file
 
+write.table(coeff.dat, file = "analysis_ready/75k_stats_model_fits.txt", row.names = FALSE, quote = FALSE)
+
+## can start fresh here
+rm(list=ls())
+coeff.dat <- read.table(file = "analysis_ready/75k_stats_model_fits.txt", header = TRUE, stringsAsFactors = FALSE)
+
+############################## DO ANY GROUPS DIFFER FROM THE "STRONG NULL"
+
+#permute means
 coeff.dat.small <- coeff.dat %>%
   select(group, recomb_rate)
  
@@ -206,7 +217,6 @@ permuted.means.list <- replicate(100000, permute_means(coeff.dat.small), simplif
 permuted.means.df <- do.call("rbind",permuted.means.list)
 observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
 
-
 ecdf.df <- permuted.means.df %>% 
   group_by(group) %>%
   do(ecdf = ecdf(.$mean_recomb)) 
@@ -221,12 +231,48 @@ ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
 # plots
 permuted.means.df %>%
   ggplot(aes(x = mean_recomb)) +
-    geom_histogram(binwidth = 0.001) +
-    facet_wrap(~group)
+  geom_histogram(binwidth = 0.001) +
+  facet_wrap(~group)
 
 permuted.means.df %>%
   ggplot(aes(x = mean_recomb)) +
   geom_histogram() +
   geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 15000,show_guide = F), size = 1, color = "red")+
   facet_wrap(~group, scales = "free")+
+
+############################## END DO ANY GROUPS DIFFER FROM THE "STRONG NULL"
+
+############################## DO GROUPS DIFFER FROM ONE ANOTHER?
+  
+#permute means
+coeff.dat.small <- coeff.dat %>%
+  select(group, recomb_rate)
+
+permute_mean_differences <- function(data) {
+  data$group <- sample(data$group, length(data$group))
+  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+  mean.diffs <- data.frame(group1 = c(rep("allo_D", 3), rep("allo_S", 2), rep("para_D" ,1)), 
+                          group2 = c("allo_S", "para_D", "para_S", "para_D", "para_S", "para_S"))
+  mean.diffs$mean1 <- mean$mean_recomb[match(mean.diffs$group1, mean$group)]
+  mean.diffs$mean2 <- mean$mean_recomb[match(mean.diffs$group2, mean$group)]
+  mean.diffs$diff <- abs(mean.diffs$mean1 - mean.diffs$mean2) 
+  return(mean.diffs[,c(1,2,5)])
+}
+
+# run the funciton above for 100,000 interations and bind into df
+permuted.means.list <- replicate(100000, permute_mean_differences(coeff.dat.small), simplify = FALSE)
+permuted.means.df <- do.call("rbind",permuted.means.list)
+observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+permute_means <- function(data) {
+  data$group <- sample(data$group, length(data$group))
+  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+  return(mean)
+}
+
+# run the funciton above for 100,000 interations and bind into df
+permuted.means.list <- replicate(100000, permute_means(coeff.dat.small), simplify = FALSE)
+permuted.means.df <- do.call("rbind",permuted.means.list)
+observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+
+############################## DO GROUPS DIFFER FROM ONE ANOTHER?
 
