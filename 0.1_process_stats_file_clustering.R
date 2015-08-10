@@ -49,8 +49,6 @@ add_map_distance <- function(snp.file){
   
   for (i in unique(snp.file$lg)){
     
-    print(paste0("processing lg ",i,"..."))
-    
     snp.file.lg <- snp.file %>%
       filter(lg == i)
     
@@ -156,18 +154,14 @@ calculate_nndist_all_lg <- function (stats.file) {
       filter(stats.file$lg == j)
    
     # the number of outliers on that lg
-    num.outliers <- sum(as.numeric(stats.file.lg$fst.outlier), na.rm = TRUE)
+    num.outliers <- sum(as.numeric(stats.file.lg$both.outlier), na.rm = TRUE)
     
     if (num.outliers > 1){
     
       # draw 10000 samples of num.outliers random loci, take the mean, and return the ecdf and mean
-      print(paste0("Permuting null nnds for lg ",j,"..."))
-      null.mean.nnds <- rep(NA, 1000)
+      null.mean.nnds <- rep(NA, 10000)
       for (i in 1:10000){
         
-      if (i %% 1000 == 0){
-        cat(paste0(i,"..."))
-      }
         site.sample <- stats.file.lg %>%
         filter(!is.na(gen.pos)) %>%
         select(gen.pos) %>%
@@ -191,14 +185,14 @@ calculate_nndist_all_lg <- function (stats.file) {
       }
       
     # calculate the estimate mean null nndist
-    null.mean <- mean(null.mean.nnds)
+    null.mean <- mean(null.mean.nnds, na.rm = TRUE)
     null.ecdf <- ecdf(null.mean.nnds)
     
     # calculate the empirical nndist for real outliers
     
     site.sample <- stats.file.lg %>%
       filter(!is.na(gen.pos)) %>%
-      filter(stats.file.lg$fst.outlier == TRUE) %>%
+      filter(stats.file.lg$both.outlier == TRUE) %>%
       select(gen.pos) %>%
       arrange(gen.pos) %>%
       mutate(dist.1 = c(NA,diff(gen.pos))) %>%
@@ -217,13 +211,21 @@ calculate_nndist_all_lg <- function (stats.file) {
     }
     empirical.mean.nnd <- mean(nn.dist, na.rm = TRUE)
     
-    nnd.stats[[j]] <- data.frame(lg = unique(stats.file.lg$lg), 
+    #number of total loci
+    n.sites <- stats.file.lg %>% filter(!is.na(gen.pos)) %>% select(gen.pos) %>% unlist %>% length
+    
+    nnd.stats[[j]] <- data.frame(lg = unique(stats.file.lg$lg),
+                                 n.sites = n.sites,
+                                 num.outliers = num.outliers,
                                  nnd.mean.null = null.mean, 
+                                 nnd.sd.null = sd(null.mean.nnds, na.rm = TRUE),
                                  nnd.mean.emp = empirical.mean.nnd,
-                                 nnd.emp.percentile = null.ecdf(empirical.mean.nnd))
+                                 nnd.emp.percentile = null.ecdf(empirical.mean.nnd),
+                                 nnd.emp.zscore = (empirical.mean.nnd - null.mean)/sd(null.mean.nnds, na.rm = TRUE),
+                                 nnd.emp.pvalue = 2*pnorm(-abs((empirical.mean.nnd - null.mean)/sd(null.mean.nnds, na.rm = TRUE))))
     }
   }
-  return(nnd.stats)
+  return(do.call("rbind", nnd.stats))
 }
 
 
@@ -233,6 +235,8 @@ calculate_nndist_all_lg <- function (stats.file) {
 calculate_coeff_dispersion_stats_file <- function(stats.filename){
   
   #read in file
+  
+  print(paste0("Processing ",stats.filename,"..."))
   
   stats.file <- data.table(read.table(stats.filename, stringsAsFactors = FALSE, header=TRUE))
   
@@ -245,10 +249,10 @@ calculate_coeff_dispersion_stats_file <- function(stats.filename){
   stats.file <- stats.file %>%
     filter(!is.na(fst)) %>%
     filter(!is.infinite(fst)) %>%
-    filter(fst > 0)) %>%
+    filter(fst > 0) %>%
     filter(!is.infinite(dxy)) %>%
     filter(!is.na(dxy)) %>%
-    filter(dxy > 0)) %>%
+    filter(dxy > 0) %>%
     mutate(fst.outlier = is.outlier(fst)) %>% 
     mutate(dxy.outlier = is.outlier(dxy)) %>% 
     mutate(both.outlier = dxy.outlier & fst.outlier)
@@ -261,21 +265,43 @@ calculate_coeff_dispersion_stats_file <- function(stats.filename){
   dispersion.stats <- list()
   for (j in unique(stats.file$lg)){
     
-    calculate_dispersion(stats.file)
-    calculate_dispersion_outliers(stats.file)
+    stats.file.lg <- stats.file %>%
+      filter(lg == j)
     
-    dispersion.stats[[j]]
+    disp.lg.all <- calculate_dispersion(stats.file.lg )
+    disp.lg.outl <- calculate_dispersion_outliers(stats.file.lg )
+    
+    dispersion.stats[[j]] <- data.frame(lg = j, disp.all = disp.lg.all, disp.out = disp.lg.outl)
   }
   
-  #calc dispersion of all loci
-  calculate_dispersion(stats.file)
+  # bind dispersion estimates into a df
+  disp.df <- do.call("rbind", dispersion.stats)
+  nnd.df <- calculate_nndist_all_lg(stats.file)
   
-  #calc dispersion of outliers
-  calculate_dispersion_outliers(stats.file)
+  #format the cluster df for output
+  cluster.df <- left_join(nnd.df, disp.df, by = "lg")
   
-  test <- calculate_nndist_all_lg(stats.file)
+  file.name.stripped <- sapply(strsplit(stats.filename, split = "/"), function(x)gsub(".txt","",x[length(x)]))
+  file.name.split <- strsplit(file.name.stripped, split = "[.]") %>% unlist
+  cluster.df$pop1 <- file.name.split[1] %>% strsplit(split="_") %>% unlist %>% .[1]
+  cluster.df$ecotype1 <- file.name.split[1] %>% strsplit(split="_") %>% unlist %>% .[2]
+  cluster.df$pop2 <- file.name.split[2] %>% strsplit(split="_") %>% unlist %>% .[1]
+  cluster.df$ecotype2 <- file.name.split[2] %>% strsplit(split="_") %>% unlist %>% .[2]
+  cluster.df$geography <- file.name.split[3]
+  cluster.df$ecology <- file.name.split[4]
+  
+  cluster.df <- cluster.df %>% select(pop1, ecotype1, pop2, ecotype2, geography, ecology, everything())
+  
+  return(cluster.df)
   
 }
 
+# burn and turn
+cluster.master <- mclapply(stats.files, calculate_coeff_dispersion_stats_file, mc.cores = 12, mc.silent = FALSE) 
+cluster.master <- do.call("rbind", cluster.master)
+
+date.stamp <- paste("_", format(Sys.time(), "%Y-%m-%d"), sep="")
+out.file.name <- file.path("analysis_ready", paste("clustering_master", date.stamp, ".txt", sep=""))
+write.table(cluster.master,file = out.file.name, row.names = FALSE, quote = FALSE)
 
 
