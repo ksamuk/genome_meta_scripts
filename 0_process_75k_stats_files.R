@@ -4,6 +4,7 @@
 rm(list=ls())
 
 library("IRanges")
+library("ggplot2")
 library("dplyr")
 
 # trusty chrom to num function
@@ -248,6 +249,13 @@ permuted.means.df %>%
 coeff.dat.small <- coeff.dat %>%
   select(group, recomb_rate)
 
+coeff.dat %>%
+  filter(group == "allo_D") %>%
+  .[,c(1:8)] %>%
+  filter(recomb_rate < -4)
+
+coeff.dat
+
 permute_mean_differences <- function(data) {
   data$group <- sample(data$group, length(data$group))
   mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
@@ -255,13 +263,38 @@ permute_mean_differences <- function(data) {
                           group2 = c("allo_S", "para_D", "para_S", "para_D", "para_S", "para_S"))
   mean.diffs$mean1 <- mean$mean_recomb[match(mean.diffs$group1, mean$group)]
   mean.diffs$mean2 <- mean$mean_recomb[match(mean.diffs$group2, mean$group)]
-  mean.diffs$diff <- abs(mean.diffs$mean1 - mean.diffs$mean2) 
+  mean.diffs$diff <- mean.diffs$mean1 - mean.diffs$mean2 
+  return(mean.diffs[,c(1,2,5)])
+}
+
+empirical_mean_differences <- function(data) {
+  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+  mean.diffs <- data.frame(group1 = c(rep("allo_D", 3), rep("allo_S", 2), rep("para_D" ,1)), 
+                           group2 = c("allo_S", "para_D", "para_S", "para_D", "para_S", "para_S"))
+  mean.diffs$mean1 <- mean$mean_recomb[match(mean.diffs$group1, mean$group)]
+  mean.diffs$mean2 <- mean$mean_recomb[match(mean.diffs$group2, mean$group)]
+  mean.diffs$diff <- mean.diffs$mean1 - mean.diffs$mean2
   return(mean.diffs[,c(1,2,5)])
 }
 
 # run the funciton above for 100,000 interations and bind into df
 permuted.means.list <- replicate(100000, permute_mean_differences(coeff.dat.small), simplify = FALSE)
-permuted.means.df <- do.call("rbind",permuted.means.list)
+permuted.means.df <- bind_rows(permuted.means.list)
+
+permuted.means.df <- permuted.means.df %>%
+  mutate(comparison = paste0(group1,"_",group2))
+
+empirical.means.df <- empirical_mean_differences(coeff.dat.small)
+
+empirical.means.df  <- empirical.means.df  %>%
+  mutate(comparison = paste0(group1,"_",group2))
+
+permuted.means.df %>%
+  ggplot(aes(x = diff))+
+  geom_histogram(binwidth = 0.01)+
+  geom_segment(data=empirical.means.df,aes(x = empirical.means.df$diff, xend = empirical.means.df$diff, y = 0,yend = 15000,show_guide = F), size = 1, color = "red")+
+  facet_wrap(~comparison)
+  
 observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
 permute_means <- function(data) {
   data$group <- sample(data$group, length(data$group))
