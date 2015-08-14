@@ -7,10 +7,6 @@ library("IRanges")
 library("ggplot2")
 library("dplyr")
 library("robustbase")
-library("colorRamps")
-library("devtools")
-install_github("karthik/wesanderson")
-library("wesanderson")
 
 # trusty chrom to num function
 chrom.to.num <- function(x){
@@ -65,7 +61,7 @@ match_evs <- function(stats.file.name){
     
     ###loop through lgs, matching evs as we god
     for (j in 1:max(stats.file$lg)){
-    #for (j in 1:2){
+      #for (j in 1:2){
       
       #subset ev and stat by lg
       ev.chr <- subset(ev,ev$lg == j)
@@ -82,10 +78,10 @@ match_evs <- function(stats.file.name){
       #find ovelaps amd build an "overlap df"
       overlap <- findOverlaps(stat.range, ev.range, select = "all")
       overlap.df <- data.frame(lg = stat.chr[queryHits(overlap),]$lg,
-                             pos1 = stat.chr[queryHits(overlap),]$pos1,
-                             pos2 = stat.chr[queryHits(overlap),]$pos2,
-                             ev.start = start(ev.range[subjectHits(overlap)]),
-                             ev.end = end(ev.range[subjectHits(overlap)]))
+                               pos1 = stat.chr[queryHits(overlap),]$pos1,
+                               pos2 = stat.chr[queryHits(overlap),]$pos2,
+                               ev.start = start(ev.range[subjectHits(overlap)]),
+                               ev.end = end(ev.range[subjectHits(overlap)]))
       
       #truncate overlaps that start before window
       overlap.df$ev.start[overlap.df$ev.start < overlap.df$pos1] <- overlap.df$pos1[overlap.df$ev.start < overlap.df$pos1]
@@ -136,7 +132,7 @@ match_evs <- function(stats.file.name){
     matched.all <- suppressMessages(left_join(matched.all, matched.evs))
     
   }
-
+  
   
   # call outliers
   matched.all <- matched.all %>%
@@ -169,8 +165,8 @@ match_evs <- function(stats.file.name){
   #                 data = matched.all)
   
   model.out <- glmrob(as.numeric(fst.outlier) ~ recomb_rate + gene_count + ds,
-                  family = binomial, data = matched.all, method= "Mqle",
-                  control= glmrobMqle.control(tcc=1.2))
+                      family = binomial, data = matched.all, method= "Mqle",
+                      control= glmrobMqle.control(tcc=1.2))
   
   coeffs <- as.list(model.out$coefficients)
   names(coeffs)[1] <- "intercept"
@@ -208,159 +204,3 @@ coeff.dat <- coeff.dat %>%
 
 #write.table(coeff.dat, file = "analysis_ready/75k_stats_model_fits.txt", row.names = FALSE, quote = FALSE)
 write.table(coeff.dat, file = "analysis_ready/75k_stats_model_fst_fits.txt", row.names = FALSE, quote = FALSE)
-
-## can start fresh here
-rm(list=ls())
-coeff.dat <- read.table(file = "analysis_ready/75k_stats_model_fits.txt", header = TRUE, stringsAsFactors = FALSE)
-
-coeff.dat <- read.table(file = "analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
-
-############################## DO ANY GROUPS DIFFER FROM THE "STRONG NULL"
-
-#permute means
-coeff.dat.small <- coeff.dat %>%
-  select(group, recomb_rate)
- 
-# function that shuffles groups, calculates their mean recom coeff, and returns the latter
-permute_means <- function(data) {
-  data$group <- sample(data$group, length(data$group))
-  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-  return(mean)
-}
-
-# run the funciton above for 100,000 interations and bind into df
-permuted.means.list <- replicate(10000, permute_means(coeff.dat.small), simplify = FALSE)
-permuted.means.df <- bind_rows(permuted.means.list)
-observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-
-coeff.dat %>%
-  ggplot(aes(x = recomb_rate, y = gene_count, color= group))+
-  geom_density2d()
-
-
-ecdf.df <- permuted.means.df %>% 
-  group_by(group) %>%
-  do(ecdf = ecdf(.$mean_recomb)) 
-
-ecdf.df$obs <- observed.means$mean_recomb
-ecdf.df$p[1] <- ecdf.df$ecdf[1][[1]](ecdf.df$obs[1])
-ecdf.df$p[2] <- ecdf.df$ecdf[2][[1]](ecdf.df$obs[2])
-ecdf.df$p[3] <- ecdf.df$ecdf[3][[1]](ecdf.df$obs[3])
-ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
-
-
-# plots
-
-# where do the empirical means fall in the permuted distributions
-permuted.means.df %>%
-  ggplot(aes(x = mean_recomb)) +
-  geom_histogram() +
-  geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 5000,show_guide = F), size = 1, color = "red")+
-  facet_wrap(~group, scales = "free_x")
-
-# what do the empirical regression lines look like?
-
-par(mfrow=c(2,2), mar = c(1,2,2,0.5)+0.1)
-
-groups <- c("para_S","para_D","allo_S","allo_D")
-
-groups <- c("para_S","allo_S", "allo_D","para_D")
-
-pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
-
-dev.off()
-dev.new()
-plot.new()
-par(mgp=c(3.5,1,0), mar=c(6,6,6,6), bty = "l")
-plot(1, ylim = c(0,0.12), xlim=c(0,50), 
-     xlab = "Recombination Rate (cM/Mb)", ylab = c(expression('F'["ST"]*" Outlier Probability")), 
-     cex.lab = 1.5, cex.axis = 1.25, yaxs= "i", xaxs = "i")
-
-for (i in 1:length(groups)){
-  
-  coeff.dat.group <- coeff.dat %>%
-    filter(group == groups[i])
-  
-  intercept <- mean(coeff.dat.group$intercept, na.rm = TRUE)
-  slope <- mean(coeff.dat.group$recomb_rate, na.rm = TRUE)
-  
-  #plot the first function
-  
-  eq <- function(x){
-    ylog <- intercept + slope*x 
-    return(1 - 1/(1 + exp(ylog))+0.0005)
-  } 
-  
-  col.line <- pal[i]
-  
-    curve(eq, from = 0, to = 50, ylim = c(0,0.12), add=TRUE, lwd = 10, col = col.line)
-
-}
-
-legend(30,0.12, # places a legend at the appropriate place 
-       c("Parapatric Same","Allopatric Same","Allopatric Different","Parapatric Different"), # puts text in the legend
-       lty = c(1,1), # gives the legend appropriate symbols (lines)
-       lwd = 10, col = pal, box.lty = 0, cex = 1.25)
-
-
-############################## END DO ANY GROUPS DIFFER FROM THE "STRONG NULL"
-
-############################## DO GROUPS DIFFER FROM ONE ANOTHER?
-  
-#permute means
-coeff.dat.small <- coeff.dat %>%
-  select(group, recomb_rate)
-
-permute_mean_differences <- function(data) {
-  data$group <- sample(data$group, length(data$group))
-  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-  mean.diffs <- data.frame(group1 = c(rep("allo_D", 3), rep("allo_S", 2), rep("para_D" ,1)), 
-                          group2 = c("allo_S", "para_D", "para_S", "para_D", "para_S", "para_S"))
-  mean.diffs$mean1 <- mean$mean_recomb[match(mean.diffs$group1, mean$group)]
-  mean.diffs$mean2 <- mean$mean_recomb[match(mean.diffs$group2, mean$group)]
-  mean.diffs$diff <- mean.diffs$mean1 - mean.diffs$mean2 
-  return(mean.diffs[,c(1,2,5)])
-}
-
-empirical_mean_differences <- function(data) {
-  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-  mean.diffs <- data.frame(group1 = c(rep("allo_D", 3), rep("allo_S", 2), rep("para_D" ,1)), 
-                           group2 = c("allo_S", "para_D", "para_S", "para_D", "para_S", "para_S"))
-  mean.diffs$mean1 <- mean$mean_recomb[match(mean.diffs$group1, mean$group)]
-  mean.diffs$mean2 <- mean$mean_recomb[match(mean.diffs$group2, mean$group)]
-  mean.diffs$diff <- mean.diffs$mean1 - mean.diffs$mean2
-  return(mean.diffs[,c(1,2,5)])
-}
-
-# run the funciton above for 100,000 interations and bind into df
-permuted.means.list <- replicate(10000, permute_mean_differences(coeff.dat.small), simplify = FALSE)
-permuted.means.df <- bind_rows(permuted.means.list)
-
-permuted.means.df <- permuted.means.df %>%
-  mutate(comparison = paste0(group1,"_",group2))
-
-empirical.means.df <- empirical_mean_differences(coeff.dat.small)
-
-empirical.means.df  <- empirical.means.df  %>%
-  mutate(comparison = paste0(group1,"_",group2))
-
-permuted.means.df %>%
-  ggplot(aes(x = diff))+
-  geom_histogram(binwidth = 0.01)+
-  geom_segment(data=empirical.means.df,aes(x = empirical.means.df$diff, xend = empirical.means.df$diff, y = 0,yend = 500,show_guide = F), size = 1, color = "red")+
-  facet_wrap(~comparison, scales = "free_y")
-  
-observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-permute_means <- function(data) {
-  data$group <- sample(data$group, length(data$group))
-  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-  return(mean)
-}
-
-# run the funciton above for 100,000 interations and bind into df
-permuted.means.list <- replicate(10000, permute_means(coeff.dat.small), simplify = FALSE)
-permuted.means.df <- do.call("rbind",permuted.means.list)
-observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-
-############################## DO GROUPS DIFFER FROM ONE ANOTHER?
-
