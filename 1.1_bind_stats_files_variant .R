@@ -3,6 +3,8 @@
 ####outputs to new dir "stats_filtered"
 #####KS Feb 2015
 
+data.frame(stringsAsFactors = )
+
 rm(list=ls())
 
 #required libraries
@@ -79,64 +81,6 @@ filter.fsts<-function(x){
 
 #apply above function to filename list
 lapply(filenames[1:length(filenames)],filter.fsts)
-
-
-# filter out unique sites from WGS data
-
-stats.out <- fread(list.files("stats/snp_filtered",pattern="*.txt$", full.names = TRUE))
-
-stats.out <- data.table(read.table(list.files("stats/snp_filtered",pattern="*.gz$", full.names = TRUE), stringsAsFactors = FALSE, header = TRUE))
-
-stats.out <- stats.out %>%
-  select(lg, pos,study, comparison) 
-
-gc()
-
-stats.out <- stats.out %>%
-  mutate(study_com = paste0(study,"_",comparison)) %>%
-  mutate(lg_pos = paste0(lg,"_",pos)) %>%
-  select(lg_pos,study_com)
-  
-
-# lg_pos's found in the grander dataset
-
-all.sites <- stats.out %>%
-  filter(!grepl("japan",study_com))%>%
-  filter(!grepl("russia",study_com))%>%
-  select(lg_pos) %>%
-  unique() 
-
-japan.sites <- stats.out %>%
-  filter(grepl("japan",study_com))%>%
-  select(lg_pos) %>%
-  unique() 
-
-russia.sites <- stats.out %>%
-  filter(grepl("russia",study_com))%>%
-  select(lg_pos) %>%
-  unique() 
-
-rm(stats.out)
-
-gc()
-
-c("a","b","c") %in% c("a","c")
-
-japan.shared.sites <- japan.sites[japan.sites %in% all.sites]
-
-russia.shared.sites <- russia.sites[russia.sites %in% all.sites]
-
-stats.out <- data.table(read.table(list.files("stats/snp_filtered",pattern="*.gz$", full.names = TRUE), stringsAsFactors = FALSE, header = TRUE))
-
-stats.out <- stats.out %>%
-  mutate(study_com = paste0(study,"_",comparison)) %>%
-  mutate(lg_pos = paste0(lg,"_",pos))
-
-stats.out[stats.out$lg_pos %in% japan.shared.sites, ]
-
-stats.out[stats.out$lg_pos %in% russia.shared.sites, ]
-
-
 
 
 
