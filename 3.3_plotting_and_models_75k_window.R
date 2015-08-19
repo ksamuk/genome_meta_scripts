@@ -11,7 +11,7 @@ library("car")
 library("visreg")
 
 # data
-all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-06-14.gz"),header=TRUE,na.strings=c("NA","<NA>"))
+all.data<-read.table(file=file.path("analysis_ready","stats_75k_2015-08-19.gz"),header=TRUE,na.strings=c("NA","<NA>"))
 
 # set negative FSTs to NA
 # this is sketchy, but for now i'm doing it
@@ -39,15 +39,13 @@ all.data.filt<-all.data%>%
   mutate(both.outlier = dxy.outlier == TRUE & fst.outlier == TRUE)%>%
   mutate(hs = (hexp1+hexp2)/2)
 
-outlier.dat<-data.frame(ungroup(all.data.filt))
+outlier.dat <- data.frame(ungroup(all.data.filt))
 
 #extract list of outliers
 outlier.list <- outlier.dat %>%
   filter(geography=="parapatric.d") %>%
   filter(fst.outlier==TRUE | dxy.outlier == TRUE ) %>%
   select(lg,pos1,pos2,study,fst.outlier,dxy.outlier)
-
-
 
 write.table(outlier.list, "sb_meta_outliers.txt")
 
@@ -65,7 +63,7 @@ outlier.dat$in.a.gene<-as.numeric(!is.na(outlier.dat$gene_id))
 outlier.dat$ks[outlier.dat$ks>=1]<-NA
 
 # dS
-outlier.dat$ds[outlier.dat$ds>=1]<-NA
+outlier.dat$ds[outlier.dat$ds>=3]<-NA
 
 # dN
 outlier.dat$dn[outlier.dat$dn>=0.4]<-NA
@@ -81,11 +79,16 @@ outlier.dat$pi_pac_10k[outlier.dat$pi_pac_10k>=0.02]<-NA
 #### VISUALIZING EVS
 
 # fst vs. dxy
-ggplot(data=outlier.dat,aes(x=pos1,y=hs, color=study_com))+
+ggplot(data=outlier.dat,aes(x = fst,y = ds, color=study_com))+
   #geom_point(alpha=0.05)+
   geom_smooth()+
   scale_alpha(range = c(0.001, 1))+
   facet_wrap(~lg)
+
+ggplot(data=outlier.dat,aes(x = ds,y = recomb_rate))+
+  #geom_point(alpha=0.05)+
+  geom_point()+
+  geom_smooth()
 
 # dxy vs ds
 ggplot(data=outlier.dat,aes(x=dxy.outlier,y=ks))+
@@ -309,15 +312,14 @@ outlier.new%>%
 
 mod1<-outlier.dat%>%
   filter(lg!=19)%>%
-  with(.,glm(as.numeric(dxy.outlier)~recomb_rate*pi_pac_10k*ld_pac,
+  with(.,glm(as.numeric(both.outlier)~recomb_rate*geography+ds,
                na.action="na.omit",
                family=binomial))
 
 summary(mod1)
 Anova(mod1)
 
-visreg(mod1,"pi_pac_10k")
-visreg(mod1,"recomb_rate")
+visreg(mod1,"recomb_rate", by="geography", trans=exp)
 visreg(mod1,"ld_pac")
 visreg2d(mod1,"recomb_rate","ld_pac",plot.type="image")
 visreg2d(mod1,"recomb_rate","pi_pac_10k",plot.type="image")

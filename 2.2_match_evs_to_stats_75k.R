@@ -25,7 +25,7 @@ stats.file<-arrange(stats.file,study,comparison,lg,pos1)
 ##subsets each by chromosome to prevent mismatches
 
 #find the ev files
-ev.files <- list.files(ev.dir)
+ev.files <- list.files(ev.dir, pattern=".txt")
 
 #initialize matched data variable
 matched.all <- data.frame(stats.file)

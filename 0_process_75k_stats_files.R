@@ -7,9 +7,8 @@ library("IRanges")
 library("ggplot2")
 library("dplyr")
 library("robustbase")
-library("colorRamps")
 library("devtools")
-install_github("karthik/wesanderson")
+#install_github("karthik/wesanderson")
 library("wesanderson")
 
 # trusty chrom to num function
@@ -149,12 +148,10 @@ match_evs <- function(stats.file.name){
   
   # Recombination distances >25cM
   #matched.all$recomb_rate[matched.all$recomb_rate >= 25] <- NA
-  # KS
-  matched.all$ks[matched.all$ks >= 1] <- NA
   # dS
-  matched.all$ds[matched.all$ds >= 1] <- NA
+  #matched.all$ds[matched.all$ds >= 1] <- NA
   # gene_count
-  matched.all$gene_count[matched.all$gene_count >= 20] <- NA
+  matched.all$gene_count[matched.all$gene_count >= 15] <- NA
   # no lg 19
   matched.all <- matched.all %>%
     filter(lg!=19)
@@ -168,9 +165,13 @@ match_evs <- function(stats.file.name){
   #                 family = binomial,
   #                 data = matched.all)
   
-  model.out <- glmrob(as.numeric(fst.outlier) ~ recomb_rate + gene_count + ds,
-                  family = binomial, data = matched.all, method= "Mqle",
-                  control= glmrobMqle.control(tcc=1.2))
+  #model.out <- glmrob(as.numeric(fst.outlier) ~ recomb_rate + gene_count + ds,
+  #                family = binomial, data = matched.all, method= "Mqle",
+  #                control= glmrobMqle.control(tcc=1.2))
+  
+  model.out <- glmrob(as.numeric(both.outlier) ~ recomb_rate + gene_count + ds,
+                      family = binomial, data = matched.all, method= "Mqle",
+                      control= glmrobMqle.control(tcc=1.2))
   
   coeffs <- as.list(model.out$coefficients)
   names(coeffs)[1] <- "intercept"
@@ -206,12 +207,12 @@ coeff.dat <- coeff.dat %>%
 
 # write to file
 
-#write.table(coeff.dat, file = "analysis_ready/75k_stats_model_fits.txt", row.names = FALSE, quote = FALSE)
-write.table(coeff.dat, file = "analysis_ready/75k_stats_model_fst_fits.txt", row.names = FALSE, quote = FALSE)
+write.table(coeff.dat, file = "analysis_ready/75k_stats_model_dxy_fits.txt", row.names = FALSE, quote = FALSE)
+#write.table(coeff.dat, file = "analysis_ready/75k_stats_model_fst_fits.txt", row.names = FALSE, quote = FALSE)
 
 ## can start fresh here
 rm(list=ls())
-coeff.dat <- read.table(file = "analysis_ready/75k_stats_model_fits.txt", header = TRUE, stringsAsFactors = FALSE)
+coeff.dat <- read.table(file = "analysis_ready/75k_stats_model_dxy_fits.txt", header = TRUE, stringsAsFactors = FALSE)
 coeff.dat <- read.table(file = "analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
 
 ## add in region data (for looser geography)
@@ -255,11 +256,6 @@ permute_means <- function(data) {
 permuted.means.list <- replicate(10000, permute_means(coeff.dat.small), simplify = FALSE)
 permuted.means.df <- bind_rows(permuted.means.list)
 observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
-
-coeff.dat %>%
-  ggplot(aes(x = recomb_rate, y = gene_count, color= group))+
-  geom_density2d()
-
 
 ecdf.df <- permuted.means.df %>% 
   group_by(group) %>%
