@@ -3,6 +3,15 @@
 ####KS mar-3-2015
 
 library(ape)
+library(biomaRt)
+library(dplyr)
+
+# as if this wasn't going to be here
+chrom.to.num <- function(x){
+  x <- gsub("group", "", x)
+  chrom.rom <- as.character(as.roman(c(1:21)))
+  return(match(x, chrom.rom))
+}
 
 #home dir set up
 #home.dir<-"E:/Genome Meta Analysis/ev_prep_scripts/paml_analysis"
@@ -61,14 +70,35 @@ for (i in 1:length(file.list)){
 
 # add in locations
 
-gene.dat <- read.table(file = "evs/additional/gene_id.txt", stringsAsFactors = FALSE, header = TRUE)
-gacu.ds$ensembl_gene_id <- gacu.ds$gene.id %>% gsub("P","G",.)
+# the physical positons for all gacu genes
+#gene.dat <- read.table(file = "evs/additional/gene_id.txt", stringsAsFactors = FALSE, header = TRUE)
 
-#output
+# convert prot ids to gene ids (???)
 
-test <- left_join(gacu.ds, gene.dat)
+ensembl <- useMart("ensembl",dataset="gaculeatus_gene_ensembl")
+master.attributes.struct<-c("ensembl_gene_id",
+                            "ensembl_peptide_id",
+                            "start_position",
+                            "end_position", 
+                            "chromosome_name")
 
+master.list.struct <- getBM(attributes = master.attributes.struct, filters = "ensembl_peptide_id", values = gacu.ds$gene.id, mart = ensembl)
 
-setwd(home.dir)
-write.table(gacu.ds, file="ds_estimates_gacu.txt")
+names(gacu.ds)[1] <- "ensembl_peptide_id" 
+
+gacu.ds <- left_join(master.list.struct, gacu.ds[,1:2], by = "ensembl_peptide_id")
+
+gacu.ds <- gacu.ds %>%
+  filter(!is.nan(ds)) %>%
+  filter(grepl("group",chromosome_name)) %>%
+  group_by(ensembl_gene_id) %>%
+  summarise(lg = chromosome_name, pos1 = mean(start_position), pos2 = mean(end_position), ds = mean(ds)) %>%
+  select(lg, pos1, pos2, ds)
+
+gacu.ds$lg <- chrom.to.num(gacu.ds$lg)
+
+gacu.ds <- gacu.ds %>%
+  arrange(lg)
+
+write.table(gacu.ds, file="evs/ds.txt")
 
