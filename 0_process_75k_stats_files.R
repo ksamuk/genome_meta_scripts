@@ -149,7 +149,7 @@ match_evs <- function(stats.file.name){
   # Recombination distances >25cM
   #matched.all$recomb_rate[matched.all$recomb_rate >= 25] <- NA
   # dS
-  #matched.all$ds[matched.all$ds >= 1] <- NA
+  matched.all$ds[matched.all$ds >= 3] <- NA
   # gene_count
   matched.all$gene_count[matched.all$gene_count >= 15] <- NA
   # no lg 19
@@ -160,18 +160,21 @@ match_evs <- function(stats.file.name){
     mutate(hs = (hexp1+hexp2)/2)
   # fit model
   
-  #model.out <- glm(as.numeric(fst.outlier) ~ recomb_rate + gene_count + ds,
-  #                 na.action = "na.omit",
-  #                 family = binomial,
-  #                 data = matched.all)
+  #match.all <- matched.all %>%
+  #  filter(!is.na(ds))
+  
+  model.out <- glm(as.numeric(fst.outlier) ~ recomb_rate + ds + gene_count,
+                   na.action = "na.omit",
+                   family = binomial,
+                   data = matched.all)
   
   #model.out <- glmrob(as.numeric(fst.outlier) ~ recomb_rate + gene_count + ds,
   #                family = binomial, data = matched.all, method= "Mqle",
   #                control= glmrobMqle.control(tcc=1.2))
   
-  model.out <- glmrob(as.numeric(both.outlier) ~ recomb_rate + gene_count + ds,
-                      family = binomial, data = matched.all, method= "Mqle",
-                      control= glmrobMqle.control(tcc=1.2))
+  #model.out <- glmrob(as.numeric(both.outlier) ~ recomb_rate + gene_count + ds,
+  #                    family = binomial, data = matched.all, method= "Mqle",
+  #                    control= glmrobMqle.control(tcc=1.2))
   
   coeffs <- as.list(model.out$coefficients)
   names(coeffs)[1] <- "intercept"
