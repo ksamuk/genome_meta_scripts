@@ -46,6 +46,10 @@ for (i in 1:length(file.list)){
     # only retain estimates for pformosa, oniloticus, xmaculatus
     gacu.row <- gacu.row %>% names %>% grep("pformosa|oniloticus|xmaculatus",.) %>% gacu.row[.]
     
+    # remove implausible branch lengths (likely bad alignments)
+    # the value of "3" was chosen because it was the 99th percentile of the distribution of estimated ds values
+    gacu.row <- gacu.row[gacu.row < 3]
+    
     # the ds estimate 
     gacu.ds$ds[i] <- mean(gacu.row, na.rm = TRUE)
     

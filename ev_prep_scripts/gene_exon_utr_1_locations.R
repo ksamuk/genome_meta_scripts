@@ -20,7 +20,7 @@ library(data.table)
 #set the mart
 ensembl <- useMart("ensembl",dataset="gaculeatus_gene_ensembl")
 #filters <- listFilters(ensembl)
-#attributes <-  listAttributes(ensembl, what=c("name","description","page"))
+attributes <-  listAttributes(ensembl, what=c("name","description","page"))
 
 #query emsembl for master list of protein coding genes
 
