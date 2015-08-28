@@ -36,8 +36,13 @@ Icon
 .Spotlight-V100
 .Trashes
 .Rproj.user
-*.RData
+.RData
+.Rhistory
+*RData*
 *.Rhistory
 *.gz
+*.7z
+*.zip
 *75000.txt
 *_75000.txt
+*.clustered.txt
