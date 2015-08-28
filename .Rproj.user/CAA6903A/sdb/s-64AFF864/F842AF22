@@ -1,0 +1,17 @@
+{
+    "contents" : "# Windows image file caches\nThumbs.db\nehthumbs.db\n\n# Folder config file\nDesktop.ini\n\n# Recycle Bin used on file shares\n$RECYCLE.BIN/\n\n# Windows Installer files\n*.cab\n*.msi\n*.msm\n*.msp\n\n# =========================\n# Operating System Files\n# =========================\n\n# OSX\n# =========================\n\n.DS_Store\n.AppleDouble\n.LSOverride\n\n# Icon must ends with two \\r.\nIcon\n*.pdf\n\n# Thumbnails\n._*\n\n# Files that might appear on external disk\n.Spotlight-V100\n.Trashes\n.RData\n.Rhistory\n*RData*\n*.Rhistory\n*.gz\n*.7z\n*.zip\n*75000.txt\n*_75000.txt\n*.clustered.txt",
+    "created" : 1440785479615.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3326100178",
+    "id" : "F842AF22",
+    "lastKnownWriteTime" : 1440785489,
+    "path" : "~/Documents/Science/Projects/Ph.D./Genome Meta Analysis/genome_meta_scripts/.gitignore",
+    "project_path" : ".gitignore",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "gitignore"
+}
