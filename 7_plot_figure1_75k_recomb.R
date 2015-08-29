@@ -37,8 +37,8 @@ for (i in 1:length(groups)){
     return(1 - 1/(1 + exp(ylog))+0.0005)
   } 
   
-  col.line <- pal[i]
   
+  col.line <- pal[i]
   curve(eq, from = 0, to = 50, ylim = c(0,0.13), add=TRUE, lwd = 10, col = col.line)
   
 }

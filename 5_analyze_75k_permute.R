@@ -1,11 +1,9 @@
 #washy washy
 rm(list=ls())
 
-library("IRanges")
 library("ggplot2")
 library("dplyr")
-library("robustbase")
-library("devtools")
+#library("devtools")
 #install_github("karthik/wesanderson")
 library("wesanderson")
 
