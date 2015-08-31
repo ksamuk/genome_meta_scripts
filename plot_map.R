@@ -43,11 +43,14 @@ map.dat <- map("worldHires",
 
 # adding points (not run)
 
-lat <- c(49) 
-lon <- c(-123)
+pop.dat <- read.csv(file = "meta_data/populations_summary_table.csv", header = TRUE, stringsAsFactors = FALSE)
+pop.dat <- pop.dat %>%
+  select(pop, ecotype, latitude, longitude, Region, N)
 
-coords <- list(x = -123, y = 49)
-points(mapproject(coords), pch=20, cex=1.2, col = "red")
+
+
+coords <- list(x = pop.dat$longitude, y = pop.dat$latitude)
+points(mapproject(coords), pch=20, cex=1.2, col = as.factor(pop.dat$ecotype))
 
 
 
