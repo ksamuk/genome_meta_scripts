@@ -6,6 +6,8 @@ library("dplyr")
 #install_github("karthik/wesanderson")
 library("wesanderson")
 
+select <- dplyr::select
+
 ## libraries
 library("dplyr")
 
@@ -17,27 +19,28 @@ cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", hea
 
 #permute means
 coeff.dat.small <- cluster.df %>%
-  select(group, nnd.emp.zscore)
+  mutate(nnd.diff = nnd.mean.emp - nnd.mean.null) %>%
+  select(group, nnd.diff)
 
 names(coeff.dat.small)[1] <- "group"
 
 # function that shuffles groups, calculates their mean recom coeff, and returns the latter
 permute_means <- function(data) {
   data$group <- sample(data$group, length(data$group))
-  mean <- data %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+  mean <- data %>% group_by(group) %>% summarise(mean_zscore = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
   return(mean)
 }
 
-# run the funciton above for 100,000 interations and bind into df
+# run the funciton above for 10,000 interations and bind into df
 permuted.means.list <- replicate(10000, permute_means(coeff.dat.small), simplify = FALSE)
 permuted.means.df <- bind_rows(permuted.means.list)
-observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_recomb = mean(recomb_rate)) %>% ungroup
+observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_zscore = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
 
 ecdf.df <- permuted.means.df %>% 
   group_by(group) %>%
-  do(ecdf = ecdf(.$mean_recomb)) 
+  do(ecdf = ecdf(.$mean_zscore)) 
 
-ecdf.df$obs <- observed.means$mean_recomb
+ecdf.df$obs <- observed.means$mean_zscore
 ecdf.df$p[1] <- ecdf.df$ecdf[1][[1]](ecdf.df$obs[1])
 ecdf.df$p[2] <- ecdf.df$ecdf[2][[1]](ecdf.df$obs[2])
 ecdf.df$p[3] <- ecdf.df$ecdf[3][[1]](ecdf.df$obs[3])
@@ -47,7 +50,7 @@ ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
 
 # where do the empirical means fall in the permuted distributions
 permuted.means.df %>%
-  ggplot(aes(x = mean_recomb)) +
+  ggplot(aes(x = mean_zscore)) +
   geom_histogram() +
   geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 5000,show_guide = F), size = 1, color = "red")+
   facet_wrap(~group, scales = "free_x")
