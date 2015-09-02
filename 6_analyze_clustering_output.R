@@ -8,21 +8,7 @@ library("wesanderson")
 library("grid")
 library("gridExtra")
 
-grid_arrange_shared_legend <- function(...) {
-  plots <- list(...)
-  g <- ggplotGrob(plots[[1]] + theme(legend.position="right"))$grobs
-  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-  lheight <- sum(legend$height)
-  grid.arrange(
-    do.call(arrangeGrob, lapply(plots, function(x)
-      x + theme(legend.position="none"))),
-    legend,
-    ncol = 2,
-    heights = unit.c(unit(1, "npc") - lheight, lheight))
-}
-
-
-
+pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 select <- dplyr::select
 
 ## libraries
@@ -44,20 +30,20 @@ names(coeff.dat.small)[1] <- "group"
 # function that shuffles groups, calculates their mean recom coeff, and returns the latter
 permute_means <- function(data) {
   data$group <- sample(data$group, length(data$group))
-  mean <- data %>% group_by(group) %>% summarise(mean_zscore = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
+  mean <- data %>% group_by(group) %>% summarise(mean.nnd.diff = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
   return(mean)
 }
 
 # run the funciton above for 10,000 interations and bind into df
-permuted.means.list <- replicate(10000, permute_means(coeff.dat.small), simplify = FALSE)
+permuted.means.list <- replicate(50000, permute_means(coeff.dat.small), simplify = FALSE)
 permuted.means.df <- bind_rows(permuted.means.list)
-observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean_zscore = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
+observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean.nnd.diff = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
 
 ecdf.df <- permuted.means.df %>% 
   group_by(group) %>%
-  do(ecdf = ecdf(.$mean_zscore)) 
+  do(ecdf = ecdf(.$mean.nnd.diff)) 
 
-ecdf.df$obs <- observed.means$mean_zscore
+ecdf.df$obs <- observed.means$mean.nnd.diff
 ecdf.df$p[1] <- ecdf.df$ecdf[1][[1]](ecdf.df$obs[1])
 ecdf.df$p[2] <- ecdf.df$ecdf[2][[1]](ecdf.df$obs[2])
 ecdf.df$p[3] <- ecdf.df$ecdf[3][[1]](ecdf.df$obs[3])
@@ -67,10 +53,19 @@ ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
 
 # where do the empirical means fall in the permuted distributions
 permuted.means.df %>%
-  ggplot(aes(x = mean_zscore)) +
+  ggplot(aes(x = mean.nnd.diff, fill = group)) +
   geom_histogram() +
-  geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 5000,show_guide = F), size = 1, color = "red")+
-  facet_wrap(~group, scales = "free_x")
+  geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 7500,show_guide = F), size = 1, color = "black")+
+  scale_fill_manual(values = pal)+
+  theme_classic(base_size = 16)+
+  theme(strip.text.x = element_blank(), 
+        strip.background = element_blank(), 
+        axis.title.x = element_text(vjust=-1.5), 
+        axis.title.y = element_text(vjust=1.5),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"))+
+  facet_wrap(~group, scales = "free_x")+
+  xlab("Mean Expected NND - Outlier NND (cM)")+
+  ylab("Frequency")
 
 
 # elaborating groupings
@@ -137,7 +132,7 @@ ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
 permuted.means.df %>%
   ggplot(aes(x = mean_zscore)) +
   geom_histogram() +
-  geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 5000,show_guide = F), size = 1, color = "red")+
+  geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 2000,show_guide = F), size = 1, color = "red")+
   facet_wrap(~group, scales = "free_x")
 
 
@@ -157,7 +152,7 @@ grouped.df <- cluster.df %>%
 #pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 size <- 16
-theme.all <- theme(legend.position="none", axis.title.x = element_blank(), axis.title.y=element_text(vjust=1.5))
+theme.all <- theme(legend.position="none", axis.title.x = element_blank(), axis.title.y = element_text(vjust=1.5))
 
 # counts of clustered lgs
 prop.clustered <- cluster.df %>%
