@@ -5,6 +5,23 @@ library("dplyr")
 #library("devtools")
 #install_github("karthik/wesanderson")
 library("wesanderson")
+library("grid")
+library("gridExtra")
+
+grid_arrange_shared_legend <- function(...) {
+  plots <- list(...)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position="right"))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  grid.arrange(
+    do.call(arrangeGrob, lapply(plots, function(x)
+      x + theme(legend.position="none"))),
+    legend,
+    ncol = 2,
+    heights = unit.c(unit(1, "npc") - lheight, lheight))
+}
+
+
 
 select <- dplyr::select
 
@@ -137,8 +154,13 @@ grouped.df <- cluster.df %>%
 
 # dem plots?
 
+#pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
+pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
+size <- 16
+theme.all <- theme(legend.position="none", axis.title.x = element_blank(), axis.title.y=element_text(vjust=1.5))
+
 # counts of clustered lgs
-cluster.df %>%
+prop.clustered <- cluster.df %>%
   mutate(more.clustered = nnd.emp.percentile*2 < 0.05) %>%
   mutate(less.clustered = nnd.emp.percentile*2 > 0.95) %>%
   mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
@@ -147,37 +169,57 @@ cluster.df %>%
   summarise(more.clustered = sum(more.clustered), less.clustered = sum(less.clustered), num.lg = sum(lg <= 21)) %>%
   mutate(more.clustered = more.clustered / num.lg, less.clustered = less.clustered / num.lg) %>%
   filter(num.lg > 1) %>%
-    ggplot(aes(x = group2, y = more.clustered))+
-      geom_boxplot()
+    ggplot(aes(x = group2, y = more.clustered, fill = group2, color = group2))+
+    scale_color_manual(values = pal)+
+    scale_fill_manual(values = pal) + 
+      geom_jitter(size = 1)+
+      geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
+      #theme(panel.grid = element_blank())+
+      theme_classic(base_size = size)+
+      theme.all+
+      ylab("Prop. chromosomes clustered")
 
-cluster.df %>% 
-  mutate(disp.out = nnd.emp.percentile*2 < 0.05) %>%
-  mutate(less.clustered = nnd.emp.percentile*2 > 0.95) %>%
-  mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
-  select(comparison, lg, group, group2, more.clustered, less.clustered) %>%
-  group_by(group2, comparison) %>%
-  summarise(more.clustered = sum(more.clustered), less.clustered = sum(less.clustered), num.lg = sum(lg <= 21)) %>%
-  mutate(more.clustered = more.clustered / num.lg, less.clustered = less.clustered / num.lg) %>%
-  filter(num.lg > 1) %>%
-  ggplot(aes(x = group2, y = more.clustered))+
-  geom_boxplot()
-
-
-cluster.df %>%
+# coeff of disp
+coeff.dispersion <- cluster.df %>%
+  filter(num.outliers >= 3) %>%
   mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
   group_by(group2, comparison) %>%
   summarise(disp.out = mean(disp.out))%>%
-  ggplot(aes(x = group2, y = disp.out)) +
-  geom_boxplot()
+    ggplot(aes(x = group2, y = disp.out, fill = group2, color = group2))+
+    scale_color_manual(values = pal)+
+    scale_fill_manual(values = pal) + 
+    geom_jitter(size = 1)+
+    geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
+    theme_classic(base_size = size)+
+    coord_cartesian(ylim=c(0,25))+
+    theme.all+
+    ylab("Outlier dispersion coefficient")
 
+# nnd.diff
+
+nnd.diff <- cluster.df %>%
+  filter(num.outliers >= 3) %>%
+  mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+  group_by(group2, comparison) %>%
+  summarise(nnd.diff = mean(nnd.diff))%>%
+  ggplot(aes(x = group2, y = nnd.diff, fill = group2, color = group2))+
+  scale_color_manual(values = pal)+
+  scale_fill_manual(values = pal) + 
+  geom_jitter(size = 1)+
+  geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
+  theme_classic(base_size = size) +
+  coord_cartesian(ylim=c(-5,5))+
+  theme.all+
+  ylab("Expected NND - Outlier NND (cM)")
+
+grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, ncol = 2)
 
 cluster.df %>%
-  filter(num.outliers >= 2) %>%
-  #filter(group2 == "para_D")
-  ggplot(aes(x = log(num.outliers), y = nnd.emp.zscore, color = group2)) +
-  geom_jitter(position = position_jitter(width = .1, height = 0)) +
+  filter(num.outliers >= 3) %>%
+  ggplot(aes(x = log(num.outliers), y = nnd.diff, color = group2)) +
+  geom_jitter(position = position_jitter(width = .1, height = 0), alpha=0.5) +
   geom_smooth(se = FALSE, size = 3)+
-  theme_classic()+
+  theme_classic(base_size = 18)+
   coord_cartesian(xlim=c(0,4))
 
 cluster.df %>%
