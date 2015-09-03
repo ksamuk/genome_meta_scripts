@@ -270,13 +270,14 @@ rep.nnd.df <- bind_rows(rep.nnd.df)
 rep.nnd.df$group2 <- ifelse(rep.nnd.df$comparison == "cr_stream.wc_stream", "para_S", rep.nnd.df$group)
 
 rep.nnd.df %>%
-  #filter(nnd > 0.01) %>%
-  ggplot(aes(x = gen.pos, y = 1, color = nnd)) +
+  #filter(gen.pos > 45.4, gen.pos < 46) %>%
+  ggplot(aes(x = gen.pos, y= pos, color = nnd)) +
   scale_color_viridis()+
   #geom_histogram(binwidth = 0.01)  +
+  #geom_hex()+
   geom_jitter(position = position_jitter(height = .1), size = 3)+
     facet_grid(group2~.) +
-    coord_cartesian(ylim = c(0.8,1.2))+
+    #coord_cartesian(ylim = c(0.8,1.2))+
     theme_classic(base_size = size) +
     theme(strip.text.x = element_blank(), 
         strip.background = element_blank(), 
