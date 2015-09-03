@@ -2,11 +2,14 @@
 
 library("ggplot2")
 library("dplyr")
-#library("devtools")
+library("devtools")
 #install_github("karthik/wesanderson")
+#evtools::install_github("sjmgarnier/viridis")
 library("wesanderson")
 library("grid")
 library("gridExtra")
+library("viridis")
+library("ggthemes")
 
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 select <- dplyr::select
@@ -16,13 +19,14 @@ library("dplyr")
 
 ## the clustering file
 cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", header = TRUE, stringsAsFactors = FALSE)
+cluster.df <- cluster.df %>%
+  mutate(nnd.diff = nnd.mean.null -  nnd.mean.emp)
 
 #### Do the groups differ in the number of significantly NND clustered chromosomes?
 #### STRICT
 
 #permute means
 coeff.dat.small <- cluster.df %>%
-  mutate(nnd.diff = nnd.mean.emp - nnd.mean.null) %>%
   select(group, nnd.diff)
 
 names(coeff.dat.small)[1] <- "group"
@@ -68,32 +72,6 @@ permuted.means.df %>%
   ylab("Frequency")
 
 
-# elaborating groupings
-cluster.df <- cluster.df %>%
-  mutate(nnd.diff = nnd.mean.null -  nnd.mean.emp)
-
-#grouped 
-grouped.df <- cluster.df %>%
-  mutate(group = paste0(geography, "_", ecology)) %>%
-  mutate(nnd.sig = nnd.emp.pvalue < 0.01) %>%
-  group_by(group2) %>%
-  summarise(num.cluster = mean(nnd.sig, na.rm = TRUE)) 
-
-# dem plots?
-cluster.df %>%
-  ggplot(aes(x = group2, y = log(nnd.diff+1))) +
-  geom_boxplot()
-
-cluster.df %>%
-  mutate(nnd.sig = nnd.emp.pvalue < 0.01)%>%
-  filter(nnd.sig == TRUE) %>%
-  ggplot(aes(x = group, y = log(nnd.diff+1))) +
-  geom_jitter()
-
-cluster.df %>%
-  ggplot(aes(x = group2, y = disp.out+1)) +
-  geom_boxplot()
-
 #### Do the groups differ in the number of significantly NND clustered chromosomes?
 #### RELAXED
 
@@ -135,10 +113,6 @@ permuted.means.df %>%
   geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 2000,show_guide = F), size = 1, color = "red")+
   facet_wrap(~group, scales = "free_x")
 
-
-# elaborating groupings
-cluster.df <- cluster.df %>%
-  mutate(nnd.diff = nnd.mean.null -  nnd.mean.emp)
 
 #grouped 
 grouped.df <- cluster.df %>%
@@ -197,32 +171,118 @@ nnd.diff <- cluster.df %>%
   mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
   group_by(group2, comparison) %>%
   summarise(nnd.diff = mean(nnd.diff))%>%
-  ggplot(aes(x = group2, y = nnd.diff, fill = group2, color = group2))+
-  scale_color_manual(values = pal)+
-  scale_fill_manual(values = pal) + 
-  geom_jitter(size = 1)+
-  geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
-  theme_classic(base_size = size) +
-  coord_cartesian(ylim=c(-5,5))+
-  theme.all+
-  ylab("Expected NND - Outlier NND (cM)")
+    ggplot(aes(x = group2, y = nnd.diff, fill = group2, color = group2))+
+    scale_color_manual(values = pal)+
+    scale_fill_manual(values = pal) + 
+    geom_jitter(size = 1)+
+    geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
+    theme_classic(base_size = size) +
+    coord_cartesian(ylim=c(-5,5))+
+    theme.all+
+    ylab("Expected NND - Outlier NND (cM)")
 
 grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, ncol = 2)
 
+
 cluster.df %>%
   filter(num.outliers >= 3) %>%
-  ggplot(aes(x = log(num.outliers), y = nnd.diff, color = group2)) +
-  geom_jitter(position = position_jitter(width = .1, height = 0), alpha=0.5) +
-  geom_smooth(se = FALSE, size = 3)+
-  theme_classic(base_size = 18)+
-  coord_cartesian(xlim=c(0,4))
+  mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+  #group_by(group2, comparison) %>%
+  #summarise(nnd.diff = mean(nnd.diff), num.outliers = num.outliers)%>%
+  filter(group2 == "para_S", lg == 4) %>% data.frame
 
-cluster.df %>%
-  mutate(nnd.sig = nnd.emp.pvalue < 0.01)%>%
-  filter(nnd.sig == TRUE) %>%
-  ggplot(aes(x = group, y = nnd.diff+)) +
-  geom_jitter()
+### representative chromosome plot
 
-cluster.df %>%
-  ggplot(aes(x = group2, y = disp.out+1)) +
-  geom_boxplot()
+# read in rep snp files
+
+is.outlier <- function(x){
+  x95 <- quantile(x, na.rm = TRUE, probs = 0.95)[1]
+  return(x >= x95)
+}
+
+rep.files <- list.files("stats/snp_representative", full.names = TRUE)
+
+source("3_process_snp_clustering.R")
+
+extract_lg <- function (file){
+  name.split <- strsplit(file,split = "/") 
+  name.split <- name.split[[1]][3]
+  name.split <- strsplit(name.split,split = "[.]") %>% unlist
+  comparison <- paste0(name.split[1],".",name.split[2])
+  group <- paste0(name.split[3],"_",name.split[4])
+  dat.tmp <- read.table(file = file, header = TRUE, stringsAsFactors = FALSE)
+  
+  dat.tmp <- dat.tmp %>%
+    filter(CHROM == "groupIV") %>%
+    filter(!is.infinite(Fst), !is.na(Fst), Fst > 0) %>%
+    select(CHROM, POS, Fst)
+  
+  names(dat.tmp)[1:3] <- c("lg","pos","fst")
+  dat.tmp$comparison <- comparison
+  dat.tmp$group <- group
+  dat.tmp$lg <- 4
+  dat.tmp$fst.outlier <- is.outlier(dat.tmp$fst)
+  dat.tmp <- dat.tmp %>%
+    filter(fst.outlier == TRUE)
+  
+  #add map distances (generates some warnings, but works as intended)
+  dat.tmp <- add_map_distance(dat.tmp)
+  return(dat.tmp)
+}
+
+rep.df <- lapply(rep.files, extract_lg)
+rep.df <- bind_rows(rep.df)
+
+# calculate empirical nnd 
+
+calc_emp_nnd_dist <- function(stats.file.lg){
+  
+  stats.file.lg <- stats.file.lg %>%
+    filter(!is.na(gen.pos))
+  
+  site.sample <- stats.file.lg %>%
+    filter(!is.na(gen.pos)) %>%
+    select(gen.pos) %>%
+    arrange(gen.pos) %>%
+    mutate(dist.1 = c(NA,diff(gen.pos))) %>%
+    mutate(dist.2 = c(diff(sort(gen.pos)),NA))
+  
+  nn.dist <- rep(NA, length(site.sample$genpos))
+  for (k in 1:length(site.sample$gen.pos)){
+    
+    if(!is.na(site.sample$dist.1[k]) & !is.na(site.sample$dist.2[k])){
+      nn.dist[k] <- min(c(site.sample$dist.1[k],site.sample$dist.2[k]))
+    }else if(is.na(site.sample$dist.1[k])){
+      nn.dist[k] <- site.sample$dist.2[k]
+    } else if(is.na(site.sample$dist.2[k])){
+      nn.dist[k] <- site.sample$dist.1[k]
+    }
+  }
+  
+  stats.file.lg$nnd <- nn.dist
+  
+  return(stats.file.lg)
+}
+
+rep.nnd.df <- lapply(rep.df, calc_emp_nnd_dist)
+rep.nnd.df <- bind_rows(rep.nnd.df)
+
+rep.nnd.df$group2 <- ifelse(rep.nnd.df$comparison == "cr_stream.wc_stream", "para_S", rep.nnd.df$group)
+
+rep.nnd.df %>%
+  #filter(nnd > 0.01) %>%
+  ggplot(aes(x = gen.pos, y = 1, color = nnd)) +
+  scale_color_viridis()+
+  #geom_histogram(binwidth = 0.01)  +
+  geom_jitter(position = position_jitter(height = .1), size = 3)+
+    facet_grid(group2~.) +
+    coord_cartesian(ylim = c(0.8,1.2))+
+    theme_classic(base_size = size) +
+    theme(strip.text.x = element_blank(), 
+        strip.background = element_blank(), 
+        axis.title.y = element_blank(), 
+        axis.title.x = element_text(vjust=1.5),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"))
+
+
+
