@@ -14,9 +14,6 @@ library("ggthemes")
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 select <- dplyr::select
 
-## libraries
-library("dplyr")
-
 ## the clustering file
 cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", header = TRUE, stringsAsFactors = FALSE)
 cluster.df <- cluster.df %>%
@@ -126,7 +123,14 @@ grouped.df <- cluster.df %>%
 #pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 size <- 16
-theme.all <- theme(legend.position="none", axis.title.x = element_blank(), axis.title.y = element_text(vjust=1.5))
+theme.all <- theme(legend.position="none", 
+                   axis.title.x = element_blank(), 
+                   axis.title.y = element_text(vjust=1.5),
+                   axis.text.x = element_blank(),
+                   axis.line.x = element_blank(),
+                   axis.ticks.x = element_blank(),
+                   strip.text = element_blank(), 
+                   strip.background = element_blank())
 
 # counts of clustered lgs
 prop.clustered <- cluster.df %>%
@@ -145,6 +149,7 @@ prop.clustered <- cluster.df %>%
       geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
       #theme(panel.grid = element_blank())+
       theme_classic(base_size = size)+
+      coord_cartesian(ylim=c(0,0.8))+
       theme.all+
       ylab("Prop. chromosomes clustered")
 
@@ -175,21 +180,13 @@ nnd.diff <- cluster.df %>%
     scale_color_manual(values = pal)+
     scale_fill_manual(values = pal) + 
     geom_jitter(size = 1)+
-    geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, weight=1, color = 1, linetype = 1)+
+    geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, width=1, color = 1, linetype = 1)+
     theme_classic(base_size = size) +
     coord_cartesian(ylim=c(-5,5))+
     theme.all+
     ylab("Expected NND - Outlier NND (cM)")
 
-grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, ncol = 2)
-
-
-cluster.df %>%
-  filter(num.outliers >= 3) %>%
-  mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
-  #group_by(group2, comparison) %>%
-  #summarise(nnd.diff = mean(nnd.diff), num.outliers = num.outliers)%>%
-  filter(group2 == "para_S", lg == 4) %>% data.frame
+grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep, ncol = 2)
 
 ### representative chromosome plot
 
@@ -231,7 +228,7 @@ extract_lg <- function (file){
 }
 
 rep.df <- lapply(rep.files, extract_lg)
-rep.df <- bind_rows(rep.df)
+#rep.df <- bind_rows(rep.df)
 
 # calculate empirical nnd 
 
@@ -269,21 +266,12 @@ rep.nnd.df <- bind_rows(rep.nnd.df)
 
 rep.nnd.df$group2 <- ifelse(rep.nnd.df$comparison == "cr_stream.wc_stream", "para_S", rep.nnd.df$group)
 
-rep.nnd.df %>%
-  #filter(gen.pos > 45.4, gen.pos < 46) %>%
-  ggplot(aes(x = gen.pos, y= pos, color = nnd)) +
-  scale_color_viridis()+
-  #geom_histogram(binwidth = 0.01)  +
-  #geom_hex()+
-  geom_jitter(position = position_jitter(height = .1), size = 3)+
-    facet_grid(group2~.) +
-    #coord_cartesian(ylim = c(0.8,1.2))+
+nnd.rep <- rep.nnd.df %>%
+  ggplot(aes(x = group2, y = gen.pos, color = group2, fill = group2)) +
+  geom_jitter(position = position_jitter(height = 2), size = 1.5)+
+    scale_color_manual(values = pal) +   
+    scale_fill_manual(values = pal) +
     theme_classic(base_size = size) +
-    theme(strip.text.x = element_blank(), 
-        strip.background = element_blank(), 
-        axis.title.y = element_blank(), 
-        axis.title.x = element_text(vjust=1.5),
-        plot.margin=unit(c(1,1,1.5,1.2),"cm"))
-
-
-
+    theme.all+
+    coord_cartesian(ylim = c(0,80))+
+    ylab("Map position on LG 4 (cM)")
