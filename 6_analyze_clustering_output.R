@@ -14,6 +14,20 @@ library("ggthemes")
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 select <- dplyr::select
 
+grid_arrange_shared_legend <- function(...) {
+  plots <- list(...)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  grid.arrange(
+    do.call(arrangeGrob, lapply(plots, function(x)
+      x + theme(legend.position="none"))),
+    legend,
+    ncol = 1,
+    heights = unit.c(unit(1, "npc") - lheight, lheight))
+}
+
+
 ## the clustering file
 cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", header = TRUE, stringsAsFactors = FALSE)
 cluster.df <- cluster.df %>%
@@ -120,6 +134,12 @@ grouped.df <- cluster.df %>%
 
 # dem plots?
 
+cluster.df$group2.old <- cluster.df$group2
+group.old.names <- c("allo_D","allo_S", "para_D", "para_S")
+group.rename <- c("Allopatric D", "Allopatric S", "Parapatric D", "Parapatric S")
+cluster.df$group2 <- group.rename[match(cluster.df$group2, group.old.names)]
+
+
 #pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 size <- 16
@@ -130,7 +150,8 @@ theme.all <- theme(legend.position="none",
                    axis.line.x = element_blank(),
                    axis.ticks.x = element_blank(),
                    strip.text = element_blank(), 
-                   strip.background = element_blank())
+                   strip.background = element_blank(),
+                   legend.title=element_blank())
 
 # counts of clustered lgs
 prop.clustered <- cluster.df %>%
@@ -185,8 +206,6 @@ nnd.diff <- cluster.df %>%
     coord_cartesian(ylim=c(-5,5))+
     theme.all+
     ylab("Expected NND - Outlier NND (cM)")
-
-grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep, ncol = 2)
 
 ### representative chromosome plot
 
@@ -265,6 +284,7 @@ rep.nnd.df <- lapply(rep.df, calc_emp_nnd_dist)
 rep.nnd.df <- bind_rows(rep.nnd.df)
 
 rep.nnd.df$group2 <- ifelse(rep.nnd.df$comparison == "cr_stream.wc_stream", "para_S", rep.nnd.df$group)
+rep.nnd.df$group2 <- group.rename[match(rep.nnd.df$group2, group.old.names)]
 
 nnd.rep <- rep.nnd.df %>%
   ggplot(aes(x = group2, y = gen.pos, color = group2, fill = group2)) +
@@ -275,3 +295,6 @@ nnd.rep <- rep.nnd.df %>%
     theme.all+
     coord_cartesian(ylim = c(0,80))+
     ylab("Map position on LG 4 (cM)")
+
+grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep, ncol = 2)
+grid_arrange_shared_legend(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep)
