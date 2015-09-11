@@ -31,8 +31,8 @@ cluster.df$group.new <- group.rename[match(cluster.df$group, group.old.names)]
 ################# relaxed groupings
 
 dev.off()
-dev.new()
-quartz(width = 8.5, height = 8.5)
+pdf(file = "figures/figure2.pdf", width = 8.5, height = 8.5, onefile=FALSE)
+#quartz(width = 8.5, height = 8.5)
 
 #pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
@@ -139,8 +139,8 @@ nnd.rep <- rep.nnd.df %>%
 # plot all the things
 #grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep, ncol = 2)
 grid_arrange_shared_legend(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep)
-
-quartz.save("figures/figure2.pdf", type = "pdf")
+dev.off()
+#quartz.save("figures/figure2.pdf", type = "pdf")
 
 
 ################# strict groupings

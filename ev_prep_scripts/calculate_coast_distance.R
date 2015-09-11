@@ -21,6 +21,10 @@ stats.file.names <- list.files("stats/75k_all")[1:10]
 # BODY
 ###############
 
+# Create nice looking color palettes
+blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
+greys <- c(grey(0.6), grey(0.93), grey(0.99))
+
 stats.file.name <- stats.file.names[1]
 
 compute_lc_distance_stats_file <- function (stats.file.name){
@@ -57,7 +61,7 @@ compute_lc_distance_stats_file <- function (stats.file.name){
   
   # lit cam
   pop1.lat <- 49.012722
-  pop1.lon <- -122.778247+360
+  pop1.lon <- -122.778247
   
   # japan
   pop2.lat <- 43.05375
@@ -72,11 +76,12 @@ compute_lc_distance_stats_file <- function (stats.file.name){
   bat.1 <- getNOAA.bathy(0, -45, 30, 80, res = 10, keep = TRUE, antimeridian = TRUE)
   bat.2 <- getNOAA.bathy(-180, 100, 30, 80, res = 10, keep = TRUE, antimeridian = FALSE)
   
-  loc <- data.frame( x = c(pop1.lon, pop2.lon), y = c(pop1.lat, pop2.lat) )
-  tr.1 <- trans.mat(bat.1, min.depth = 0, max.depth = -500)
+  loc.1 <- data.frame( x = c(pop1.lon+360, pop2.lon), y = c(pop1.lat, pop2.lat) )
+  loc.2 <- data.frame( x = c(pop1.lon, pop2.lon), y = c(pop1.lat, pop2.lat) )
+  tr.1 <- trans.mat(bat.1, min.depth = -10, max.depth = -300)
   tr.2 <- trans.mat(bat.2, min.depth = -10, max.depth = -300)
-  cost.1 <- lc.dist(tr.1, loc, res="path")
-  cost.2 <- lc.dist(tr.2, loc, res="path")
+  cost.1 <- lc.dist(tr.1, loc.1, res="dist")
+  cost.2 <- lc.dist(tr.2, loc.2, res="path")
   plot(bat.1, image = TRUE, asp = 2, land = TRUE, deep=-3000, shallow=-100, step=10000, drawlabels = FALSE, bpal = list(c(min(bat.1,na.rm=TRUE), 0, blues), c(0, max(bat.1, na.rm=TRUE), greys)), lwd = 0.0)
   plot(bat.2, image = TRUE, asp=2, land = TRUE, deep=-4000, shallow=-1000, step=1000, drawlabels = FALSE, bpal = list(c(min(bat.2,na.rm=TRUE), 0, blues), c(0, max(bat.2, na.rm=TRUE), greys)), lwd = 0.1)
   
@@ -92,9 +97,7 @@ compute_lc_distance_stats_file <- function (stats.file.name){
   
 }
 
-# Create nice looking color palettes
-blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
-greys <- c(grey(0.6), grey(0.93), grey(0.99))
+
 
 # Import bathymetry
 bat <- getNOAA.bathy(-100, -80, 22, 31, res = 1, keep = TRUE)
