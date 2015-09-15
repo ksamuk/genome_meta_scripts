@@ -17,16 +17,19 @@ library("ggplot2")
 #########################
 
 fst.df <- read.table("meta_data/fst_df.txt", header = TRUE, stringsAsFactors = FALSE)
+fst.model.fits <- read.table("analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
 dist.df <- read.table("meta_data/pop_geo_distances.txt", header = TRUE, stringsAsFactors = FALSE)
+
 
 #########################
 # BODY
 #########################
 
-fst.df <- cbind(fst.df, dist.df[,7:10])
+all.df <- cbind(fst.model.fits, dist.df[,7:10], fst.df$fst)
+names(all.df)[length(all.df)] <- "fst"
 
-fst.df %>%
-	ggplot(aes(x = log(euc.distance), y = fst, label = paste0(pop1,pop2))) +
+all.df %>%
+	ggplot(aes(x = log(euc.distance), y = recomb_rate, color = group2)) +
 	geom_point() + 
 	#geom_smooth(method = "lm")+
 	#facet_wrap(~group2)
