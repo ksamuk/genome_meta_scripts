@@ -11,6 +11,7 @@ rm(list =ls())
 
 library("dplyr")
 library("ggplot2")
+library("visreg")
 
 #########################
 # INPUT FILES
@@ -29,7 +30,11 @@ all.df <- cbind(fst.model.fits, dist.df[,7:10], fst.df$fst)
 names(all.df)[length(all.df)] <- "fst"
 
 all.df %>%
-	ggplot(aes(x = log(euc.distance), y = recomb_rate, color = group2)) +
-	geom_point() + 
-	#geom_smooth(method = "lm")+
-	#facet_wrap(~group2)
+	mutate(isolation = dist.to.coast1) %>%
+	ggplot(aes(x = log(isolation), y = recomb_rate, color = group2)) +
+	geom_point(size = 3)
+
+recomb.lm <- all.df %>%
+	mutate(isolation = dist.to.coast1 + dist.to.coast2) %>%
+	lm(recomb_rate ~ fst + euc.distance + isolation + ecology, data = .)
+
