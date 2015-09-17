@@ -29,12 +29,22 @@ dist.df <- read.table("meta_data/pop_geo_distances.txt", header = TRUE, stringsA
 all.df <- cbind(fst.model.fits, dist.df[,7:10], fst.df$fst)
 names(all.df)[length(all.df)] <- "fst"
 
+fst.iso.resid <- all.df %>%
+	mutate(isolation = dist.to.coast1 + dist.to.coast2) %>%
+	lm(fst ~ isolation, data = .) %>%
+	residuals
+
+all.df$fst.resid <- fst.iso.resid 
+
 all.df %>%
-	mutate(isolation = dist.to.coast1) %>%
-	ggplot(aes(x = log(isolation), y = recomb_rate, color = group2)) +
-	geom_point(size = 3)
+	mutate(isolation = dist.to.coast1+dist.to.coast2)%>%
+	mutate(comparison = paste0(pop1, pop2)) %>%
+	ggplot(aes(x = least.cost.distance, y = fst.iso.resid, color = ecology, label = comparison)) +
+	geom_text(size = 3)+
+	geom_smooth(method = "lm")
 
 recomb.lm <- all.df %>%
 	mutate(isolation = dist.to.coast1 + dist.to.coast2) %>%
-	lm(recomb_rate ~ fst + euc.distance + isolation + ecology, data = .)
+	lm(recomb_rate ~ fst*euc.distance*isolation*ecology, data = .)
 
+visreg(recomb.lm)
