@@ -20,6 +20,10 @@ quartz(width = 8.5, height = 6)
 
 coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
 
+coeff.dat.fst %>%
+  ggplot(aes(x = pop1, y = recomb_rate))+
+  geom_point()
+
 groups <- c("para_S","allo_S", "allo_D","para_D")
 pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 
@@ -38,6 +42,7 @@ for (i in 1:length(groups)){
     filter(group == groups[i])
   
   intercept <- mean(coeff.dat.group$intercept, na.rm = TRUE)
+  intercept <- -2
   slope <- mean(coeff.dat.group$recomb_rate, na.rm = TRUE)
   
   #plot the first function
@@ -100,6 +105,9 @@ quartz(width = 8.5, height = 6)
 ##### what do the empirical regression lines look like? - FST ONLY
 
 coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
+coeff.dat.fst <- coeff.dat.fst %>%
+filter(!(ecotype1 == "benthic" | ecotype1 == "limnetic"))%>%
+  filter(!(ecotype2 == "benthic" | ecotype2 == "limnetic"))
 
 groups <- c("para_S","allo_S", "allo_D","para_D")
 pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
@@ -137,6 +145,8 @@ for (i in 1:length(groups)){
 
 coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_dxy_fits.txt", header = TRUE, stringsAsFactors = FALSE)
 
+
+
 plot(1, ylim = c(0,0.02), xlim=c(0,50), 
      xlab = "Recombination Rate (cM/Mb)", ylab = c(expression('Joint F'["ST"]*'/D'["XY"]*" Outlier Probability")), 
      cex.lab = label.scaling, cex.axis = label.scaling, yaxs= "i", xaxs = "i")
@@ -170,3 +180,4 @@ legend(23,0.02, # places a legend at the appropriate place
 
 quartz.save("figures/figureS1.pdf", type = "pdf")
 
+sum(c(1, 2), na.r=F)
