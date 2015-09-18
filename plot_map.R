@@ -1,8 +1,9 @@
-library(mapproj)
-library(rgdal)
 library(mapdata)
-library(dplyr)
+library(maps)
+library(maptools)
 library(rworldmap)
+library(dplyr)
+
 
 map("worldHires",  xlim = c(-130, -100), ylim = c(50,60), resolution = 0)
 
@@ -18,20 +19,30 @@ region.dat <-  pop.dat %>%
 	summarise(lat.min = min(latitude), lat.max = max(latitude), 
 						lon.min = min(longitude), lon.max = max(longitude))
 
-region.dat$adjust.lat <- c(2, 0.5, 1.5, 11, 0.5, 2, 4)
-region.dat$adjust.lon <- c(6, 1, 4.25, 25, 2.5, 2, 8)
+region.dat$adjust.lat <- c(2.05, 1.25, 2.55, 17, 1.9, 2, 5)
+region.dat$adjust.lon <- c(6, 1, 4.5, 25, 2.5, 2, 8)
 
-par(mfrow = c(2,2), mar = c(0,0,0,0))
-lapply(region.dat$Region[1:4], plot_pop_map, pop.dat = pop.dat)
 
- plot_pop_map <- function (region, pop.dat){
+
+plot_pop_map("Alaska", pop.dat)
+plot_pop_map("Denmark", pop.dat)
+plot_pop_map("BC", pop.dat)
+plot_pop_map("Japan", pop.dat)
+plot_pop_map("Nova Scotia", pop.dat)
+
+par(mfrow = c(3,3), mar = c(0,0,0,0))
+lapply(region.dat$Region, plot_pop_map, pop.dat = pop.dat)
+
+plot_pop_map <- function (region, pop.dat, manual = FALSE, adjust.lat = 0, adjust.lon = 0){
 
 	region.dat.sub <- region.dat %>%
 		filter(Region == region)
 	
-	adjust.lat <- region.dat.sub$adjust.lat
-	adjust.lon <- region.dat.sub$adjust.lon
-	
+	if (manual == FALSE){
+		adjust.lat <- region.dat.sub$adjust.lat
+		adjust.lon <- region.dat.sub$adjust.lon
+	}
+
 	lat <- c(region.dat.sub$lat.min-adjust.lat, region.dat.sub$lat.max+adjust.lat) 
 	lon <- c(region.dat.sub$lon.min-adjust.lon, region.dat.sub$lon.max+adjust.lon)
 	# the map itself
@@ -50,8 +61,10 @@ lapply(region.dat$Region[1:4], plot_pop_map, pop.dat = pop.dat)
 	
 	region.coords <- list(x = region.dat$longitude, y = region.dat$latitude)
 	points(region.coords, pch = 20, cex = 3, col = as.factor(region.dat$ecotype))
-	return(dev.size())
-
+	map.centre <- c(mean(region.dat.sub$lat.min, region.dat.sub$lat.max), mean(region.dat.sub$lon.min, region.dat.sub$lon.max))
+	map.scale(ratio = FALSE)
+	#map.scale(map.centre[2], map.centre[1], units = "Km")
+	
 }
 
 
