@@ -33,12 +33,38 @@ cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", hea
 cluster.df <- cluster.df %>%
   mutate(nnd.diff = nnd.mean.null -  nnd.mean.emp)
 
+## add in region data (for looser geography)
+region.dat <- read.table(file = "meta_data/population_regions.txt", header = TRUE, stringsAsFactors = FALSE)
+
+# make short pop codes
+region.dat$pop.code <- strsplit(region.dat$pop.code, split = "_") %>% lapply(function(x)return(x[1])) %>% unlist
+
+# associate pops in coeff dat with regions in region dat
+region.sub <- region.dat[,c(1,4)]
+names(region.sub) <- c("pop1","reg1")
+cluster.df$reg1 <- region.sub$reg1[match(cluster.df$pop1, region.sub$pop1)]
+
+region.sub <- region.dat[,c(1,4)]
+names(region.sub) <- c("pop2","reg2")
+cluster.df$reg2 <- region.sub$reg2[match(cluster.df$pop2, region.sub$pop2)]
+
+# make new geographic categories
+cluster.df$geography2 <- ifelse(cluster.df$reg1==cluster.df$reg2, "para", "allo")
+
+#make new groups :o
+cluster.df$group2 <- paste0(cluster.df$geography2,"_",cluster.df$ecology)
+
+group.old.names <- c("allo_D","allo_S", "para_D", "para_S")
+group.rename <- c("Allopatry\nDivergent", "Allopatry\nParallel", "Gene Flow\nDivergent", "Gene Flow\nParallel")
+cluster.df$group2.new <-group.rename[match(cluster.df$group2, group.old.names)]
+cluster.df$group.new <- group.rename[match(cluster.df$group, group.old.names)]
+
 #### Do the groups differ in the number of significantly NND clustered chromosomes?
 #### STRICT
 
 #permute means
 coeff.dat.small <- cluster.df %>%
-  select(group, nnd.diff)
+  select(group2.new, nnd.diff)
 
 names(coeff.dat.small)[1] <- "group"
 
@@ -50,10 +76,12 @@ permute_means <- function(data) {
 }
 
 # run the funciton above for 10,000 interations and bind into df
-permuted.means.list <- replicate(50000, permute_means(coeff.dat.small), simplify = FALSE)
+permuted.means.list <- replicate(20000, permute_means(coeff.dat.small), simplify = FALSE)
 permuted.means.df <- bind_rows(permuted.means.list)
+
 observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean.nnd.diff = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
 
+# ecdfs for plotting
 ecdf.df <- permuted.means.df %>% 
   group_by(group) %>%
   do(ecdf = ecdf(.$mean.nnd.diff)) 
@@ -63,6 +91,21 @@ ecdf.df$p[1] <- ecdf.df$ecdf[1][[1]](ecdf.df$obs[1])
 ecdf.df$p[2] <- ecdf.df$ecdf[2][[1]](ecdf.df$obs[2])
 ecdf.df$p[3] <- ecdf.df$ecdf[3][[1]](ecdf.df$obs[3])
 ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
+
+# function for two-sided, monte carlo style pvalue
+two_side_p <- function(dist, mean){
+	p1 <- (sum(dist > mean)+1) / (length(dist)+1)
+	p2 <- (sum(dist < mean)+1) / (length(dist)+1)
+	p <- min(p1, p2)*2
+	return(p)
+}
+
+# calculate pvalues (used in paper)
+pvals <- list()
+for (i in 1:length(unique(permuted.means.df$group))){
+	df <- permuted.means.df %>% filter(group == unique(permuted.means.df$group)[i])
+	pvals[[i]] <- data.frame(pvalue = two_side_p(df$mean.nnd.diff, observed.means$mean.nnd.diff[i]), group = unique(permuted.means.df$group)[i])
+} 
 
 # plots
 
