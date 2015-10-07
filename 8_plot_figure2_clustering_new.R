@@ -31,8 +31,6 @@ cluster.df$group.new <- group.rename[match(cluster.df$group, group.old.names)]
 
 ################# relaxed groupings
 
-dev.off()
-pdf(file = "figures/figure2.pdf", width = 8.5, height = 8.5, onefile=FALSE)
 #quartz(width = 8.5, height = 8.5)
 
 #pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
@@ -103,18 +101,19 @@ coeff.dispersion <- cluster.df %>%
 nnd.diff <- cluster.df %>%
   filter(num.outliers >= 3) %>%
   mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+	mutate(nnd.diff.sd = nnd.diff/nnd.sd.null) %>%
   group_by(group2.new, comparison) %>%
-  summarise(nnd.diff = mean(nnd.diff))%>%
-  ggplot(aes(x = group2.new, y = nnd.diff, fill = group2.new, color = group2.new))+
+  summarise(nnd.diff = mean(nnd.diff.sd))%>%
+  ggplot(aes(x = group2.new, y = nnd.diff , fill = group2.new, color = group2.new))+
   scale_color_manual(values = pal)+
   scale_fill_manual(values = pal) + 
   geom_jitter(size = 1)+
   geom_boxplot(notch = TRUE, outlier.size = 0, notchwidth = 0.75, width=1, color = 1, linetype = 1)+
   geom_text(mapping = NULL, label = "B", x = 4.25, y= 4.75, color = "black" ,alpha = 0.25)+
   theme_classic(base_size = size) +
-  coord_cartesian(ylim=c(-5,5))+
+  coord_cartesian(ylim=c(-2,4))+
   theme.all+
-  ylab("Expected NND - Outlier NND (cM)")
+  ylab("Expected NND - Outlier NND / Null SD")
 
 ### representative chromosome plot
 
@@ -230,6 +229,9 @@ nnd.diff <- cluster.df %>%
 
 # plot all the things
 #grid.arrange(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep, ncol = 2)
+
+dev.off()
+pdf(file = "figures/figure2.pdf", width = 8.5, height = 8.5, onefile=FALSE)
 grid_arrange_shared_legend(prop.clustered, nnd.diff, coeff.dispersion, nnd.rep)
 
-quartz.save("figures/figureS2.pdf", type = "pdf")
+dev.off()

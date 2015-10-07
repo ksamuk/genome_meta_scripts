@@ -1,0 +1,3 @@
+- tbd: fix nnd vs nnd sd in figure 1 and figure s4
+- tbd: dxy clustering !! 3x figures, figure 2/S4/S6, but dxy. 
+- tbd: general code clean-up

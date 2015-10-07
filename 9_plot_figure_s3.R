@@ -1,71 +1,67 @@
 # figure s3
 rm(list=ls())
 
+################################################################################
+# Libraries and initalizing variables
+################################################################################
+
 library("ggplot2")
 library("dplyr")
 library("wesanderson")
 library("Hmisc")
 library("ggthemes")
 library("gridExtra")
+library("cowplot")
 
-# initialize graphic device
-dev.off()
-dev.new()
-quartz(width = 6, height = 6)
+list.files("shared_functions", full.names = TRUE) %>% sapply(source)
+pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
+#pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
+
+################################################################################
+# load raw data
+################################################################################
 
 # load raw data
+coeff.dat <- initialize_coeff_dat_files()
 
-coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
+################################################################################
+# create plots of recombination coefficients
+################################################################################
 
-# rename grouping variables for plotting
-group.old.names <- c("allo_D","allo_S", "para_D", "para_S")
-group.rename <- c("Allopatry\n Divergent", "Allopatry\n Parallel", "Gene Flow\n Divergent", "Gene Flow\n Parallel")
-coeff.dat.fst$group2.new <-group.rename[match(coeff.dat.fst$group2, group.old.names)]
-coeff.dat.fst$group.new <- group.rename[match(coeff.dat.fst$group, group.old.names)]
+# recombination rate vs fst -- relaxed groupings
+group <- "group2.new"
+stat <- "recomb_rate_fst"
 
-# palatte town
-pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
+fst_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "A")
 
-# recombination rate coefficients -- relaxed groupings
-relaxed <- coeff.dat.fst %>%
-		ggplot(aes(x = group2.new, y = recomb_rate))+
-			geom_point(position = position_jitter(width = 0.3), size = 1)+
-			geom_errorbar(stat = "hline", 
-										yintercept = "mean",
-										width = 0.8, size = 2, 
-										aes(ymax = ..y.. , ymin = ..y..),
-										color = c(pal[3], pal[2], pal[4], pal[1]))+
-				geom_text(mapping = NULL, label = "A", x = 4.5, y= 0.15, color = "black" ,alpha = 0.25, size = 4)+
-				theme_hc(base_size = 16) +
-				theme(axis.title.y = element_text(vjust=4, hjust = -3),
-							axis.text.x = element_blank(),
-							axis.ticks.x = element_blank(),
-							plot.margin = unit(c(1,1,1,1),"cm"))+
-				ylab("Recombination rate coefficient")+
-				xlab(NULL)
+# recombination rate vs fst -- strict groupings
+group <- "group.new"
+stat <- "recomb_rate_fst"
+fst_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "B")
 
-# recombination rate coefficients -- strict groupings
+# recombination rate vs fst -- relaxed groupings
+group <- "group2.new"
+stat <- "recomb_rate_dxy"
 
-strict <- coeff.dat.fst %>%
-	ggplot(aes(x = group.new, y = recomb_rate))+
-	geom_point(position = position_jitter(width = 0.3), size = 1)+
-	geom_errorbar(stat = "hline", 
-								yintercept = "mean",
-								width = 0.8, size = 2, 
-								aes(ymax = ..y.. , ymin = ..y..),
-								color = c(pal[3], pal[2], pal[4], pal[1]))+
-	geom_text(mapping = NULL, label = "B", x = 4.5, y= 0.15, color = "black" ,alpha = 0.25, size = 4)+
-	theme_hc(base_size = 16) +
-	theme(axis.title.y = element_text(vjust=4, hjust = -1.25),
-				axis.title.x = element_text(vjust=-3),
-				axis.ticks.x = element_blank(),
-				plot.margin = unit(c(0,1,1,1),"cm"))+
-	ylab("Recombination Rate Coefficient")+
-	xlab(NULL)
+fst_dxy_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "C")
+
+# recombination rate vs fst -- strict groupings
+group <- "group.new"
+stat <- "recomb_rate_dxy"
+
+fst_dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "D")
+
+################################################################################
+# create unified plot
+################################################################################
 
 # plot both graphs to pdf
-grid.arrange(relaxed, strict)
-quartz.save("figures/figureS3.pdf", type = "pdf")
 
+pdf(file = "figures/figureS3.pdf", height = 8.5, width = 8.5)
+
+plot_grid(fst_relaxed, fst_strict, fst_dxy_relaxed, fst_dxy_strict, 
+					ncol = 1)
+
+dev.off()
 
 

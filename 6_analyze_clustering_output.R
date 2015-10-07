@@ -1,32 +1,28 @@
 ## permutation test to assess significance of clustering data
 
+########################################
+# Libraries and initalizing variables
+########################################
+
 library("ggplot2")
 library("dplyr")
 library("devtools")
-#install_github("karthik/wesanderson")
-#evtools::install_github("sjmgarnier/viridis")
 library("wesanderson")
 library("grid")
 library("gridExtra")
 library("viridis")
 library("ggthemes")
+library("lazyeval")
+library("Hmisc")
+
+list.files("shared_functions", full.names = TRUE) %>% sapply(source)
 
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 select <- dplyr::select
 
-grid_arrange_shared_legend <- function(...) {
-  plots <- list(...)
-  g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
-  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-  lheight <- sum(legend$height)
-  grid.arrange(
-    do.call(arrangeGrob, lapply(plots, function(x)
-      x + theme(legend.position="none"))),
-    legend,
-    ncol = 1,
-    heights = unit.c(unit(1, "npc") - lheight, lheight))
-}
-
+########################################
+# Read in and format input files
+########################################
 
 ## the clustering file
 cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", header = TRUE, stringsAsFactors = FALSE)
@@ -51,7 +47,7 @@ cluster.df$reg2 <- region.sub$reg2[match(cluster.df$pop2, region.sub$pop2)]
 # make new geographic categories
 cluster.df$geography2 <- ifelse(cluster.df$reg1==cluster.df$reg2, "para", "allo")
 
-#make new groups :o
+#make new groups 
 cluster.df$group2 <- paste0(cluster.df$geography2,"_",cluster.df$ecology)
 
 group.old.names <- c("allo_D","allo_S", "para_D", "para_S")
@@ -59,61 +55,64 @@ group.rename <- c("Allopatry\nDivergent", "Allopatry\nParallel", "Gene Flow\nDiv
 cluster.df$group2.new <-group.rename[match(cluster.df$group2, group.old.names)]
 cluster.df$group.new <- group.rename[match(cluster.df$group, group.old.names)]
 
-#### Do the groups differ in the number of significantly NND clustered chromosomes?
-#### STRICT
+########################################
+# Permutation tests
+########################################
 
-#permute means
-coeff.dat.small <- cluster.df %>%
-  select(group2.new, nnd.diff)
+##### Nearest neighbour distance: Relaxed
 
-names(coeff.dat.small)[1] <- "group"
+stat <- "nnd.diff"
+group_type <- "group2.new" # relaxed
+n_permutations <- 10000
 
-# function that shuffles groups, calculates their mean recom coeff, and returns the latter
-permute_means <- function(data) {
-  data$group <- sample(data$group, length(data$group))
-  mean <- data %>% group_by(group) %>% summarise(mean.nnd.diff = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
-  return(mean)
-}
-
-# run the funciton above for 10,000 interations and bind into df
-permuted.means.list <- replicate(20000, permute_means(coeff.dat.small), simplify = FALSE)
+# run the permutation function above for 10,000 interations and bind into df
+permuted.means.list <- replicate(n_permutations, 
+																 permute_means(cluster.df, stat, group_type), simplify = FALSE)
 permuted.means.df <- bind_rows(permuted.means.list)
 
-observed.means <- coeff.dat.small  %>% group_by(group) %>% summarise(mean.nnd.diff = mean(nnd.diff, na.rm = TRUE)) %>% ungroup
+observed.means <- cluster.df %>% 
+	group_by(group) %>% 
+	summarise_(mean_stat = interp(~ mean(var, na.rm = TRUE), var = as.name(stat))) %>% 
+	ungroup
 
 # ecdfs for plotting
 ecdf.df <- permuted.means.df %>% 
-  group_by(group) %>%
-  do(ecdf = ecdf(.$mean.nnd.diff)) 
+	group_by_(interp(group_type)) %>% 
+	do_(ecdf = interp(~ ecdf(.$var), var = as.name(stat)))
 
-ecdf.df$obs <- observed.means$mean.nnd.diff
+ecdf.df$obs <- observed.means[,"mean_stat"] %>% unlist
 ecdf.df$p[1] <- ecdf.df$ecdf[1][[1]](ecdf.df$obs[1])
 ecdf.df$p[2] <- ecdf.df$ecdf[2][[1]](ecdf.df$obs[2])
 ecdf.df$p[3] <- ecdf.df$ecdf[3][[1]](ecdf.df$obs[3])
 ecdf.df$p[4] <- ecdf.df$ecdf[4][[1]](ecdf.df$obs[4])
 
 # function for two-sided, monte carlo style pvalue
-two_side_p <- function(dist, mean){
-	p1 <- (sum(dist > mean)+1) / (length(dist)+1)
-	p2 <- (sum(dist < mean)+1) / (length(dist)+1)
-	p <- min(p1, p2)*2
-	return(p)
-}
+
 
 # calculate pvalues (used in paper)
 pvals <- list()
-for (i in 1:length(unique(permuted.means.df$group))){
-	df <- permuted.means.df %>% filter(group == unique(permuted.means.df$group)[i])
-	pvals[[i]] <- data.frame(pvalue = two_side_p(df$mean.nnd.diff, observed.means$mean.nnd.diff[i]), group = unique(permuted.means.df$group)[i])
+group_names <- unlist(unique(permuted.means.df[,1]))
+for (i in 1:length(group_names)){
+	df <- subset(permuted.means.df, permuted.means.df[,1] == group_names[i])
+	pvals[[i]] <- data.frame(pvalue = two_side_p(unlist(df[,2]), observed.means$mean_stat[i]), group = group_names[i])
 } 
 
 # plots
 
 # where do the empirical means fall in the permuted distributions
+names(permuted.means.df)[1] <- "group"
+names(ecdf.df)[1] <- "group"
+
+dev.off()
+dev.new()
+cairo_pdf(file = "figures/nnd_diff_relaxed_raw.pdf", width =8.5, height = 6)
+#quartz(width = 6, height = 6)
+
 permuted.means.df %>%
-  ggplot(aes(x = mean.nnd.diff, fill = group)) +
-  geom_histogram() +
-  geom_segment(data=ecdf.df,aes(x = ecdf.df$obs, xend = ecdf.df$obs, y = 0,yend = 7500,show_guide = F), size = 1, color = "black")+
+  ggplot(aes(x = nnd.diff, fill = group)) +
+  geom_histogram(binwidth = 0.02) +
+  geom_segment(data = ecdf.df,aes(x = obs, xend = obs, y = 400,yend = 0, show_guide = F), 
+  						 size = 1, color = "black", arrow = arrow(length = unit(0.3, "cm"), type = "closed"))+
   scale_fill_manual(values = pal)+
   theme_classic(base_size = 16)+
   theme(strip.text.x = element_blank(), 
@@ -121,9 +120,14 @@ permuted.means.df %>%
         axis.title.x = element_text(vjust=-1.5), 
         axis.title.y = element_text(vjust=1.5),
         plot.margin=unit(c(1,1,1.5,1.2),"cm"))+
-  facet_wrap(~group, scales = "free_x")+
+  facet_grid(~group)+
   xlab("Mean Expected NND - Outlier NND (cM)")+
   ylab("Frequency")
+
+#quartz.save("figures/nnd_diff_relaxed_raw.pdf", type = "pdf")
+dev.off()
+
+
 
 
 #### Do the groups differ in the number of significantly NND clustered chromosomes?
