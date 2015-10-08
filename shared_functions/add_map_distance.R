@@ -6,7 +6,7 @@ add_map_distance <- function(snp.file){
 	snp.file$pos <- as.numeric(snp.file$pos)
 	
 	snp.file <- snp.file %>%
-		arrange(lg,pos)
+		arrange(lg, pos)
 	
 	# read in genetic map data
 	map.file <- list.files(file.path("ev_prep_scripts"), pattern="roesti_recomb_estimates.txt", full.names = TRUE)
@@ -53,7 +53,6 @@ add_map_distance <- function(snp.file){
 			} else if (nrow(windows) == 2){
 				#print(paste(i, snp.pos, nrow(windows)))
 				# marker only found in reversed section breakpoints, set as blank
-				if 
 				snp.pos.window <- c()
 			}
 		

@@ -107,7 +107,7 @@ dir.create(out.folder)
 out.files.exist <- out.files %>% gsub("\\d","",.) %>% gsub("-","",.) %>% gsub(".gz_.clustered.txt",".txt.gz",.)
 stats.reformat <- list.files(stats.folder)
 
-stats.files <- stats.files[!stats.reformat %in% out.files.exist]
+stats.files <- rev(stats.files[!stats.reformat %in% out.files.exist])
 
 ################################################################################
 # run clustering stats function
@@ -115,7 +115,7 @@ stats.files <- stats.files[!stats.reformat %in% out.files.exist]
 
 #cluster.master <- lapply(stats.files, calculate_coeff_dispersion_stats_file) 
 
-mclapply(stats.files, calculate_coeff_dispersion_stats_file, mc.cores = 4, mc.silent = FALSE, mc.preschedule = FALSE) 
+mclapply(stats.files, calculate_coeff_dispersion_stats_file, mc.cores = 2, mc.silent = FALSE, mc.preschedule = FALSE) 
 #cluster.master <- do.call("rbind", cluster.master)
 
 #$date.stamp <- paste("_", format(Sys.time(), "%Y-%m-%d"), sep="")
