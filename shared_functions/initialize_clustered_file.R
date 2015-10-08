@@ -3,6 +3,8 @@
 # (used by all cluster permutation scripts)
 ########################################
 
+initialize_clustering_output <- function(){
+	
 ## the clustering file
 cluster.df <- read.table(file = "analysis_ready/snp_clustering_metrics.txt", header = TRUE, stringsAsFactors = FALSE)
 cluster.df <- cluster.df %>%
@@ -34,3 +36,5 @@ group.old.names <- c("allo_D","allo_S", "para_D", "para_S")
 group.rename <- c("Allopatry\nDivergent", "Allopatry\nParallel", "Gene Flow\nDivergent", "Gene Flow\nParallel")
 cluster.df$group2.new <-group.rename[match(cluster.df$group2, group.old.names)]
 cluster.df$group.new <- group.rename[match(cluster.df$group, group.old.names)]
+return(cluster.df)
+}
