@@ -1,8 +1,8 @@
 initialize_coeff_dat_files<- function(){
 
 	# choose either fst or fst/dxy 
-	coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_dxy_fits.txt", header = TRUE, stringsAsFactors = FALSE)
-	coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fst_fits.txt", header = TRUE, stringsAsFactors = FALSE)
+	coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
+	coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
 	
 	coeff.dat.fst <- coeff.dat.fst %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%

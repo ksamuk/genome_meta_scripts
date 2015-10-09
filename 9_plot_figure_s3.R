@@ -13,7 +13,7 @@ library("ggthemes")
 library("gridExtra")
 library("cowplot")
 
-list.files("shared_functions", full.names = TRUE) %>% sapply(source)
+list.files("shared_functions", full.names = TRUE) %>% sapply(source) %>% invisible
 pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 #pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 
