@@ -1,4 +1,4 @@
-match_evs <- function(stats.file.name, linear_model_function = linear_model_function, filt_outliers_function = filt_outliers_function ){
+match_evs <- function(stats.file.name, linear_model_function = linear_model_function){
 	
 	print(paste0("processing ", stats.file.name,"..."))
 	#initialize data to be matched 
@@ -101,7 +101,7 @@ match_evs <- function(stats.file.name, linear_model_function = linear_model_func
 	}
 	
 	# filter and call outliers
-	matched.all <- filt_outliers_function(matched.all)
+	matched.all <- filter_data_call_outliers_function(matched.all)
 	
 	#filter matched.all
 	
