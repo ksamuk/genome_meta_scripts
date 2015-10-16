@@ -118,6 +118,7 @@ dir.create(out.folder)
 args <- commandArgs(TRUE)
 cores <- as.double(args[1])
 direction <- as.character(args[2])
+limit <- as.logical(args[3])
 
 # check which SNP files (stats.folder) still need to be processed
 out.files <- list.files(out.folder)
@@ -126,32 +127,40 @@ stats.reformat <- list.files(stats.folder)
 files.to.process <- stats.files[!stats.reformat %in% out.files.exist]
 
 # keep checking and processing files until all are complete
-while (length(files.to.process) >= 1){
+
+if (limit){
 	
-	print(paste0(length(files.to.process), " files remaining, processing next ", cores, " files. (direction = ",direction,")"))
-	
-	# check if running in reverse direction (typically ran one script fwd and one rev)
-	# (ghetto distributed method)
-	if (direction == "rev"){
-		files.to.process <- rev(files.to.process)
+	while (length(files.to.process) >= 1){
+		
+		print(paste0(length(files.to.process), " files remaining, processing next ", cores, " files. (direction = ",direction,")"))
+		
+		# check if running in reverse direction (typically ran one script fwd and one rev)
+		# (ghetto distributed method)
+		if (direction == "rev"){
+			files.to.process <- rev(files.to.process)
+		}
+		
+		# a chunk of files to process
+		files.to.process <- files.to.process[1:cores]
+		
+		# process files (*NIX systems only)
+		# if any threads throw errors, print them to console
+		catch_error <- try(mclapply(files.to.process, calculate_coeff_dispersion_stats_file, mc.cores = cores, mc.silent = FALSE, mc.preschedule = FALSE)) 
+		print(catch_error)
+		
+		# process files (Windows)
+		# lapply(files.to.process[2], calculate_coeff_dispersion_stats_file, trace = TRUE, num_permutations = 100)
+		
+		
+		# reread files to process
+		out.files <- list.files(out.folder)
+		out.files.exist <- out.files %>% gsub("\\d","",.) %>% gsub("-","",.) %>% gsub(".gz_.clustered.txt",".txt.gz",.)
+		files.to.process <- stats.files[!stats.reformat %in% out.files.exist]
 	}
-	
-	# a chunk of files to process
-	files.to.process <- files.to.process[1:cores]
-	
-	# process files (*NIX systems only)
-	# if any threads throw errors, print them to console
+}else{
 	catch_error <- try(mclapply(files.to.process, calculate_coeff_dispersion_stats_file, mc.cores = cores, mc.silent = FALSE, mc.preschedule = FALSE)) 
 	print(catch_error)
-	
-	# process files (Windows)
-	# lapply(files.to.process[2], calculate_coeff_dispersion_stats_file, trace = TRUE, num_permutations = 100)
-	
-	
-	# reread files to process
-	out.files <- list.files(out.folder)
-	out.files.exist <- out.files %>% gsub("\\d","",.) %>% gsub("-","",.) %>% gsub(".gz_.clustered.txt",".txt.gz",.)
-	files.to.process <- stats.files[!stats.reformat %in% out.files.exist]
 }
+	
 
 # END
