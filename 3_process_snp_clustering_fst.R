@@ -83,7 +83,7 @@ calculate_coeff_dispersion_stats_file <- function(stats.filename, num_permutatio
 	
 	if(trace){print("Calculating NND metrics...")} 
 	#### calculate nndist metrics
-	nnd.df <- calculate_nndist_all_lg(stats.file, num_permutations)
+	nnd.df <- calculate_nndist_all_lg(stats.file, num_permutations, trace = trace)
 	
 	if(trace){print("Writing to file...")} 
 	#### format the cluster df for output
@@ -140,10 +140,12 @@ while (length(files.to.process) >= 1){
 	files.to.process <- files.to.process[1:cores]
 	
 	# process files (*NIX systems only)
-	mclapply(files.to.process, calculate_coeff_dispersion_stats_file, mc.cores = cores, mc.silent = FALSE, mc.preschedule = FALSE) 
+	# if any threads throw errors, print them to console
+	catch_error <- try(mclapply(files.to.process, calculate_coeff_dispersion_stats_file, mc.cores = cores, mc.silent = FALSE, mc.preschedule = FALSE)) 
+	print(catch_error)
 	
 	# process files (Windows)
-	#lapply(files.to.process, calculate_coeff_dispersion_stats_file, trace = TRUE)
+	# lapply(files.to.process[2], calculate_coeff_dispersion_stats_file, trace = TRUE, num_permutations = 100)
 	
 	
 	# reread files to process

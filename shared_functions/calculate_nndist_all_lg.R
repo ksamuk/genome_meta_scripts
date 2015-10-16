@@ -5,7 +5,7 @@ calculate_nndist_all_lg <- function (stats.file, num_permutations, trace = FALSE
 	nnd.stats <- list()
 	
 	for (j in unique(stats.file$lg)){
-
+		if(trace){cat(paste0("LG ", j, "..."))} 
 		# subset for lg j
 		stats.file.lg <- stats.file %>%
 			filter(stats.file$lg == j)
@@ -16,6 +16,8 @@ calculate_nndist_all_lg <- function (stats.file, num_permutations, trace = FALSE
 			select(fst.outlier) %>%
 			unlist %>%
 			sum(na.rm = TRUE)
+		
+		if(trace){cat(paste0(num.outliers, " outliers."))} 
 		
 		if (num.outliers > 1){
 			

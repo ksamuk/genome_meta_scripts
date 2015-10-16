@@ -29,9 +29,14 @@ pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 # define group order (for matching to palatte)
 groups <- c("para_S","allo_S", "allo_D","para_D")
 
-# regression coefficient data
+# read in linear model output
 coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
 coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
+
+# filter out models that failed to converge (v. low coeffs)
+
+coeff.dat.fst <- coeff.dat.fst %>% filter(recomb_rate > -100)
+coeff.dat.dxy <- coeff.dat.dxy %>% filter(recomb_rate > -100)
 
 ################################################################################
 # Figure 1: FST & FST/DXY, Relaxed Groupings
