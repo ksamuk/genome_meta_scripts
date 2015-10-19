@@ -34,22 +34,34 @@ stat <- "recomb_rate_fst"
 
 fst_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "A")
 
-# recombination rate vs fst -- strict groupings
-group <- "group.new"
-stat <- "recomb_rate_fst"
-fst_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "B")
+# recombination rate vs fst/dxy -- relaxed groupings
+group <- "group2.new"
+stat <- "recomb_rate_fst_dxy"
 
-# recombination rate vs fst -- relaxed groupings
+fst_dxy_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "B")
+
+# recombination rate vs dxy -- relaxed groupings
 group <- "group2.new"
 stat <- "recomb_rate_dxy"
 
-fst_dxy_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "C")
+dxy_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "C")
+
+# recombination rate vs fst -- strict groupings
+group <- "group.new"
+stat <- "recomb_rate_fst"
+fst_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "D")
+
+# recombination rate vs fst -- strict groupings
+group <- "group.new"
+stat <- "recomb_rate_fst_dxy"
+
+fst_dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "E")
 
 # recombination rate vs fst -- strict groupings
 group <- "group.new"
 stat <- "recomb_rate_dxy"
 
-fst_dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "D")
+dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "F")
 
 ################################################################################
 # create unified plot
@@ -59,9 +71,10 @@ fst_dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "D")
 
 pdf(file = "figures/figureS3.pdf", height = 8.5, width = 8.5)
 
-plot_grid(fst_relaxed, fst_strict, fst_dxy_relaxed, fst_dxy_strict, 
-					ncol = 1)
+plot_grid(fst_relaxed, fst_strict, 
+					dxy_relaxed, dxy_strict,
+					fst_dxy_relaxed, fst_dxy_strict,
+					ncol = 2)
 
 dev.off()
-
 
