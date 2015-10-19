@@ -47,6 +47,8 @@ coeff.dat <- initialize_coeff_dat_files()
 # perform permutations + plot results
 ################################################################################
 
+
+#### FST 
 stat <- "recomb_rate_fst"
 group_type <- "group2.new" # relaxed
 
@@ -61,6 +63,22 @@ permutation_output <- run_cluster_permutations(coeff.dat, stat, group_type, n_pe
 pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
+#### FST / DXY (joint)
+stat <- "recomb_rate_fst_dxy"
+group_type <- "group2.new" # relaxed
+
+permutation_output <- run_cluster_permutations(coeff.dat, stat, group_type, n_permutations)
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
+
+stat <- "recomb_rate_fst_dxy"
+group_type <- "group.new" # strict
+
+permutation_output <- run_cluster_permutations(coeff.dat, stat, group_type, n_permutations)
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
+
+#### DXY
 stat <- "recomb_rate_dxy"
 group_type <- "group2.new" # relaxed
 

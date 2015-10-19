@@ -22,8 +22,6 @@ list.files("shared_functions", full.names = TRUE) %>% sapply(.,source, verbose =
 ################################################################################
 
 # define color palatte for plotting
-# Interviewer: People say Eleanor is the brains behind Team Zissou. What is Steve?
-# Esteban: He's the Zissou.
 pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
 
 # define group order (for matching to palatte)
@@ -31,7 +29,8 @@ groups <- c("para_S","allo_S", "allo_D","para_D")
 
 # regression coefficient data
 coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
-coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
+coeff.dat.fst.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
+coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
 
 ################################################################################
 # Figure 1: FST & FST/DXY, Relaxed Groupings
@@ -51,8 +50,11 @@ plot_averaged_regression_lines(coeff.dat.fst, groups, pal, group_variable[2],
 															 ylim = c(0,0.12), xlim = c(0,50), 
 															 ylab = c(expression('F'["ST"]*" Outlier Probability")))
 plot_averaged_regression_lines(coeff.dat.dxy, groups, pal, group_variable[2], 
+															 ylim = c(0,0.1), xlim = c(0,50), 
+															 ylab = c(expression('D'["XY"]*" Outlier Probability")))
+plot_averaged_regression_lines(coeff.dat.fst.dxy, groups, pal, group_variable[2], 
 															 ylim = c(0,0.02), xlim = c(0,50), 
-															 ylab = c(expression('Joint F'["ST"]*'/D'["XY"]*" Outlier Probability")))															 
+															 ylab = c(expression('Joint F'["ST"]*'/D'["XY"]*" Outlier Probability")))	
 
 ##### what do the empirical regression lines look like? - FST/DXY
 

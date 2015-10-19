@@ -2,7 +2,8 @@ initialize_coeff_dat_files<- function(){
 
 	# choose either fst or fst/dxy 
 	coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
-	coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
+	coeff.dat.fst.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
+	coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
 	
 	coeff.dat.fst <- coeff.dat.fst %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
@@ -11,12 +12,18 @@ initialize_coeff_dat_files<- function(){
 					 reg1, reg2, geography, geography2, ecology, 
 					 group, group2, recomb_rate_fst)
 	
+	coeff.dat.fst.dxy <- coeff.dat.dxy %>%
+		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+		rename(recomb_rate_fst_dxy = recomb_rate) %>%
+		select(comparison, recomb_rate_fst_dxy)
+	
 	coeff.dat.dxy <- coeff.dat.dxy %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 		rename(recomb_rate_dxy = recomb_rate) %>%
 		select(comparison, recomb_rate_dxy)
 	
-	coeff.dat <- left_join(coeff.dat.fst,coeff.dat.dxy)
+	coeff.dat <- left_join(coeff.dat.fst, coeff.dat.dxy)
+	coeff.dat <- left_join(coeff.dat, coeff.dat.fst.dxy)
 	
 	## add in region data (for looser geography)
 	region.dat <- read.table(file = "meta_data/population_regions.txt", header = TRUE, stringsAsFactors = FALSE)
