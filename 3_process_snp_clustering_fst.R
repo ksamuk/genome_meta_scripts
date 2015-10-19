@@ -141,7 +141,7 @@ if (limit){
 		}
 		
 		# a chunk of files to process
-		files.to.process <- files.to.process[1:cores]
+		files.to.process <- files.to.process[1:20]
 		
 		# process files (*NIX systems only)
 		# if any threads throw errors, print them to console
