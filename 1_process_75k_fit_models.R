@@ -11,8 +11,8 @@ if (length(commandArgs(TRUE)) > 0){
 	args <- commandArgs(TRUE)
 	args <- as.list(args)
 	
-	if(!(args[[1]] %in% c("fst", "fst_dxy"))){
-		stop("Invalid first argument (outlier type)! Valid values are \'fst\' and \'fst_dxy\' e.g.: \n\'Rscript 1_process_75k_fst.R fst\'")
+	if(!(args[[1]] %in% c("fst","dxy","fst_dxy"))){
+		stop("Invalid first argument (outlier type)! Valid values are \'fst\',\'dxy\' and \'fst_dxy\' e.g.: \n\'Rscript 1_process_75k_fst.R fst\'")
 	}
 	
 	if(length(commandArgs(TRUE)) == 2){
@@ -61,6 +61,9 @@ if (length(args) > 0){
 	# choose outlier type for linear model (fst or dxy)
 	if (args[[1]] == "fst"){
 		linear_model_function <- fit_linear_model_fst
+		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
+	} else if (args[[1]] == "dxy"){
+		linear_model_function <- fit_linear_model_dxy
 		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
 	} else{
 		linear_model_function <- fit_linear_model_fst_dxy

@@ -97,7 +97,7 @@ plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pa
 # plot figure S5
 ################################################################################
 
-pdf(file = "figures/Figure S5.pdf", height = 8.5, width = 12)
+pdf(file = "figures/Figure S5.pdf", height = 8.5, width = 12, onefile = FALSE)
 plot_grid(plots[[1]], plots[[2]], plots[[3]], plots[[4]] , 
 					ncol = 1)
 dev.off()

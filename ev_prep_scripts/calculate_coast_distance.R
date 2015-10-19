@@ -1,5 +1,5 @@
 ############################################################
-# calculate euclidian distance between populations
+# calculate euclidian & 'least cost' distance between populations
 # KS Aug 2015
 ############################################################
 
@@ -19,6 +19,8 @@ source("shared_functions/getNOAA_bathy_prefix.R")
 source("shared_functions/lc_dist_no_bar.R")
 source("shared_functions/lon_to_region.R")
 source("shared_functions/point_to_nearest_coastline.R")
+
+select <- dplyr::select
 
 #########################
 # INPUT FILES
@@ -117,8 +119,7 @@ compute_lc_distance_stats_file <- function (stats.file.name, bathy1, bathy2, tra
 
 	  	loc <- data.frame( x = c(pop1.lon.adj, pop2.lon.adj), y = c(pop1.lat, pop2.lat))
 	  	
-	  	# move point to nearest coastline
-	  	
+	  	# find point to nearest coastline for both pops
 	  	nearest.coastline <- point_to_nearest_coastline(bat, loc, mode = 1)
 	  	
 	  	loc$x[1] <- nearest.coastline$loc.x.1.[1] 
@@ -136,6 +137,7 @@ compute_lc_distance_stats_file <- function (stats.file.name, bathy1, bathy2, tra
 	  	
 	  	loc <- data.frame(x = c(pop1.lon, pop2.lon), y = c(pop1.lat, pop2.lat))
 	  	
+	  	# find point to nearest coastline for both pops
 	  	nearest.coastline <- point_to_nearest_coastline(bat, loc, mode = 2)
 	  	
 	  	loc$x[1] <- nearest.coastline$loc.x.1.[1] 
@@ -162,10 +164,9 @@ compute_lc_distance_stats_file <- function (stats.file.name, bathy1, bathy2, tra
   			pop2.lon.adj <- pop2.lon
   		}
   		
-  		
   		loc <- data.frame( x = c(pop1.lon.adj, pop2.lon.adj), y = c(pop1.lat, pop2.lat)) 
   		
-  		# move point to nearest coastline
+  		# find point to nearest coastline for both pops
   		nearest.coastline <- point_to_nearest_coastline(bat, loc, mode =1)
   		
   		loc$x[1] <- nearest.coastline$loc.x.1.[1] 
@@ -219,6 +220,9 @@ compute_lc_distance_stats_file <- function (stats.file.name, bathy1, bathy2, tra
   
 }
 
+# run the above function for all files, on three cores 
+# might not work in *NIX?
+
 cl <- makeCluster(getOption("cl.cores", 3))
 
 clusterEvalQ(cl, {
@@ -243,10 +247,13 @@ distances.df <- parLapply(cl = cl, stats.file.names, compute_lc_distance_stats_f
 
 stopCluster(cl)
 
-distances.df <- lapply(stats.file.names, compute_lc_distance_stats_file, 
-											 bathy1 = bat1, bathy2 = bat2, trans1 = tr1, trans2 = tr2,
-											 plot.map = TRUE)
+# single core version
+# works for all OSs
+#distances.df <- lapply(stats.file.names, compute_lc_distance_stats_file, 
+#											 bathy1 = bat1, bathy2 = bat2, trans1 = tr1, trans2 = tr2,
+#											 plot.map = TRUE)
 
+# clean up results and write to file
 distances.df <- bind_rows(distances.df)
 
 distances.df <- distances.df %>%

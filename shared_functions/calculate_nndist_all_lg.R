@@ -1,20 +1,23 @@
-calculate_nndist_all_lg <- function (stats.file, num_permutations) {
+calculate_nndist_all_lg <- function (stats.file, num_permutations, trace = FALSE) {
 	
 	## first, build null distributions of nndists for each linkage group:
 	
 	nnd.stats <- list()
 	
 	for (j in unique(stats.file$lg)){
-		
+		if(trace){cat(paste0("LG ", j, "..."))} 
 		# subset for lg j
 		stats.file.lg <- stats.file %>%
 			filter(stats.file$lg == j)
 		
 		# the number of outliers on that lg
 		num.outliers <- stats.file.lg %>%
+			filter(!is.na(gen.pos)) %>%
 			select(fst.outlier) %>%
 			unlist %>%
 			sum(na.rm = TRUE)
+		
+		if(trace){cat(paste0(num.outliers, " outliers."))} 
 		
 		if (num.outliers > 1){
 			

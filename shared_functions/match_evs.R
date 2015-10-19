@@ -2,7 +2,7 @@ match_evs <- function(stats.file.name, linear_model_function = linear_model_func
 	
 	print(paste0("processing ", stats.file.name,"..."))
 	#initialize data to be matched 
-	stats.file <- read.table(stats.file.name, header=TRUE)
+	stats.file <- read.table(stats.file.name, header = TRUE)
 	if (length(stats.file[,1]) < 1){
 		return(NA)
 	}
