@@ -16,6 +16,7 @@ library("ggplot2")
 library("ggthemes")
 library("Hmisc")
 library("cowplot")
+library("lazyeval")
 
 list.files("shared_functions", full.names = TRUE) %>% sapply(source) %>% invisible
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
@@ -60,7 +61,7 @@ all.df <- all.df %>%
 # Figure S7
 #########################
 
-pdf(file = "figures/figureS7.pdf", height = 8.5, width = 8.5)
+pdf(file = "figures/figureS7.pdf", height = 8.5, width = 8.5, onefile = FALSE)
 	
 size_all <- 2
 alpha_all <- 0.2
@@ -119,34 +120,28 @@ dev.off()
 
 #########################
 # Permutations re: above
+# NOT RUN
 #########################
 
-shuffle_all_df <- function(all.df){
-	all.df$ecology <- sample(all.df$ecology, size = length(all.df$ecology))
-	all.df
-}
-
-perm <- function(all.df) {
-	shuffle_all_df(all.df) %>% 
-	lm(data = ., recomb_rate ~ isolation.sum *ecology) %>% 
-		tidy %>% 
-		.[4,2] %>%
-	  return
-}
-
-per1 <- replicate(1000, perm(all.df))
-
-	
-
-all.df %>%
-	lm(data = ., recomb_rate ~ euc.distance *ecology) %>%
-	anova %>%
-	tidy
-
-all.df %>%
-	lm(data = ., recomb_rate ~ least.cost.distance *ecology) %>%
-	tidy
-
-all.df %>%
-	lm(data = ., recomb_rate ~ fst *ecology) %>%
-	tidy
+# options(warn = -1)
+# 
+# <- permute_means(all.df, "recomb_rate", "ecology")
+# 
+# options(warn = 0)
+# 
+# per1 <- replicate(1000, perm(all.df))
+# 
+# 	
+# 
+# all.df %>%
+# 	lm(data = ., recomb_rate ~ euc.distance *ecology) %>%
+# 	anova %>%
+# 	tidy
+# 
+# all.df %>%
+# 	lm(data = ., recomb_rate ~ least.cost.distance *ecology) %>%
+# 	tidy
+# 
+# all.df %>%
+# 	lm(data = ., recomb_rate ~ fst *ecology) %>%
+# 	tidy

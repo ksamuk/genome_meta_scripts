@@ -144,7 +144,7 @@ plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pa
 # make unified plot
 ################################################################################
 
-pdf(file = "figures/Figure S9.pdf", height = 8.5, width = 12)
+pdf(file = "figures/Figure S9.pdf", height = 8.5, width = 12, onefile = FALSE)
 plot_grid(plots[[1]], plots[[2]], plots[[3]], plots[[4]] , plots[[5]], plots[[6]] , 
 					ncol = 1)
 dev.off()
