@@ -1,4 +1,4 @@
-save_pvals <- function(permutation_output){
+save_pvals <- function(permutation_output, stat, group_type){
 	
 	pvals <- permutation_output$pvals
 	pvals$stat <- stat

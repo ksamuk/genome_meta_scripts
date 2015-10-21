@@ -3,7 +3,7 @@
 rm(list = ls())
 
 ################################################################################
-# Libraries and initalizing variables
+# Libraries and shared functions
 ################################################################################
 
 library("ggplot2")
@@ -25,20 +25,25 @@ select <- dplyr::select
 
 cluster.df <- initialize_clustering_output()
 
+# filter out linakge groups with super low data
+# clustering metrics behave strangely when number of sites / number of outliers is very low
 cluster.df <- cluster.df %>%
-	filter(num.outliers > 3)
+	filter(n.sites > 30) %>%
+	filter(num.outliers > 5)
 
 pvals <- list()
 plots <- list()
 
-theme_all <- theme_classic(base_size = 16)+
-						theme(strip.text.x = element_blank(), 
-									strip.background = element_blank(), 
-									axis.title.x = element_blank(), 
-									axis.title.y = element_blank(),
-									#plot.margin=unit(c(0.5,0.5,0.5,0.5),"cm"),
-									plot.margin=unit(c(0,0,0,0),"cm"),
-									legend.position = "none")
+theme_all <- theme_classic(base_size = 12)+
+		theme(strip.text.x = element_blank(), 
+				strip.background = element_blank(), 
+				axis.title.x = element_blank(), 
+				axis.title.y = element_blank(),
+				#plot.margin=unit(c(0.5,0.5,0.5,0.5),"cm"),
+				plot.margin = unit(c(0,0,0,0),"cm"),
+				legend.position = "none"
+				#axis.text.x = element_text(angle = 45, hjust = 1, size = 10)
+				)
 
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 
@@ -51,8 +56,15 @@ n_permutations <- 10000
 stat <- "nnd.diff.sd"
 group_type <- "group2.new" # relaxed
 
-permutation_output <- run_cluster_permutations(cluster.df, stat, group_type, n_permutations)
-pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+permutation_output <- cluster.df %>%
+	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+	group_by(group2.new, comparison) %>%
+	summarise(nnd.diff.sd = mean(nnd.diff.sd, na.rm = TRUE))%>%
+	filter(!is.na(nnd.diff.sd)) %>%
+	filter(nnd.diff.sd > -4)%>% # remove single crazy low value (some kind of error)
+	run_cluster_permutations(., stat, group_type, n_permutations, collapsed = TRUE)
+
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output, stat, group_type)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
 ################################################################################
@@ -62,8 +74,15 @@ plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pa
 stat <- "nnd.diff.sd"
 group_type <- "group.new" # relaxed
 
-permutation_output <- run_cluster_permutations(cluster.df, stat, group_type, n_permutations)
-pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+permutation_output <- cluster.df %>%
+	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+	group_by(group.new, comparison) %>%
+	summarise(nnd.diff.sd = mean(nnd.diff.sd, na.rm = TRUE))%>%
+	filter(!is.na(nnd.diff.sd)) %>%
+	filter(nnd.diff.sd > -4)%>% # remove single crazy low value (some kind of error)
+		run_cluster_permutations(., stat, group_type, n_permutations, collapsed = TRUE)
+
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output, stat, group_type)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
 ################################################################################
@@ -74,7 +93,7 @@ stat <- "disp.out"
 group_type <- "group2.new" # relaxed
 
 permutation_output <- run_cluster_permutations(cluster.df, stat, group_type, n_permutations)
-pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output, stat, group_type)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
 ################################################################################
@@ -85,7 +104,7 @@ stat <- "disp.out"
 group_type <- "group.new" # strict
 
 permutation_output <- run_cluster_permutations(cluster.df, stat, group_type, n_permutations)
-pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output, stat, group_type)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
 ################################################################################
@@ -101,8 +120,8 @@ group_type <- "group2.new" # strict
 # lower %5 = outliers have shorter nnd than expected, upper %5 = the opposite
 
 cluster.df.collapsed <- cluster.df %>%
-	mutate(more.clustered = nnd.emp.percentile*2 < 0.05) %>%
-	mutate(less.clustered = nnd.emp.percentile*2 > 0.95) %>%
+	mutate(more.clustered = nnd.emp.percentile < 0.05) %>%
+	mutate(less.clustered = nnd.emp.percentile > 0.95) %>%
 	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 	group_by(group2.new, comparison) %>%
 	summarise(more.clustered = sum(more.clustered), less.clustered = sum(less.clustered), num.lg = sum(lg <= 21)) %>%
@@ -110,7 +129,7 @@ cluster.df.collapsed <- cluster.df %>%
 	filter(num.lg > 1)
 
 permutation_output <- run_cluster_permutations(cluster.df.collapsed, stat, group_type, n_permutations, collapsed = TRUE)
-pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output, stat, group_type)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
 
@@ -127,8 +146,8 @@ group_type <- "group.new" # strict
 # lower %5 = outliers have shorter nnd than expected, upper %5 = the opposite
 
 cluster.df.collapsed <- cluster.df %>%
-	mutate(more.clustered = nnd.emp.percentile*2 < 0.05) %>%
-	mutate(less.clustered = nnd.emp.percentile*2 > 0.95) %>%
+	mutate(more.clustered = nnd.emp.percentile < 0.05) %>%
+	mutate(less.clustered = nnd.emp.percentile > 0.95) %>%
 	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 	group_by(group.new, comparison) %>%
 	summarise(more.clustered = sum(more.clustered), less.clustered = sum(less.clustered), num.lg = sum(lg <= 21)) %>%
@@ -136,7 +155,7 @@ cluster.df.collapsed <- cluster.df %>%
 	filter(num.lg > 1)
 
 permutation_output <- run_cluster_permutations(cluster.df.collapsed, stat, group_type, n_permutations, collapsed = TRUE)
-pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output)
+pvals[[paste(stat,group_type)]] <- save_pvals(permutation_output, stat, group_type)
 plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pal = pal, theme_all = theme_all)
 
 
@@ -144,9 +163,13 @@ plots[[length(plots)+1]] <- plot_permutation_output(permutation_output, stat, pa
 # make unified plot
 ################################################################################
 
-pdf(file = "figures/Figure S9.pdf", height = 8.5, width = 12, onefile = FALSE)
-plot_grid(plots[[1]], plots[[2]], plots[[3]], plots[[4]] , plots[[5]], plots[[6]] , 
-					ncol = 1)
+pdf(file = "figures/FigureS6.pdf", height = 8.5, width = 12, onefile = FALSE)
+labels <- c("num.clustered_relaxed", "num.clustered_strict", 
+						"nnd.diff_relaxed", "nnd.diff_strict",
+						"disp_relaxed", "disp_strict"
+						)
+plot_grid(plots[[5]], plots[[6]], plots[[1]], plots[[2]], plots[[3]], plots[[4]], 
+					ncol = 1, labels = labels, align = "hv")
 dev.off()
 
 ################################################################################

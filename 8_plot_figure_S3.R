@@ -14,8 +14,8 @@ library("gridExtra")
 library("cowplot")
 
 list.files("shared_functions", full.names = TRUE) %>% sapply(source) %>% invisible
-pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
-#pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
+#pal <- wes_palette("Zissou", 50, type = "continuous")[c(1,17,30,50)]
+pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 
 ################################################################################
 # load raw data
@@ -32,36 +32,60 @@ coeff.dat <- initialize_coeff_dat_files()
 group <- "group2.new"
 stat <- "recomb_rate_fst"
 
-fst_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "A")
+fst_relaxed <- coeff.dat %>%
+	filter(!is.na(recomb_rate_fst)) %>%
+	plot_dot_line_plot(coeff.dat, group, stat, label = "", 
+								pal = pal, y_lab = "", theme_all = NULL, 
+								point_size = 1, line_size = 2)
 
 # recombination rate vs fst/dxy -- relaxed groupings
 group <- "group2.new"
 stat <- "recomb_rate_fst_dxy"
 
-fst_dxy_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "B")
+fst_dxy_relaxed <- coeff.dat %>%
+	filter(!is.na(recomb_rate_fst_dxy)) %>%
+	plot_dot_line_plot(., group, stat, label = "", 
+											pal = pal, y_lab = "", theme_all = NULL, 
+											point_size = 1, line_size = 2)
 
 # recombination rate vs dxy -- relaxed groupings
 group <- "group2.new"
 stat <- "recomb_rate_dxy"
 
-dxy_relaxed <- plot_dot_line_plot(coeff.dat, group, stat, label = "C")
+dxy_relaxed <- coeff.dat %>%
+	filter(!is.na(recomb_rate_dxy)) %>%
+	plot_dot_line_plot(., group, stat, label = "", 
+																	pal = pal, y_lab = "", theme_all = NULL, 
+																	point_size = 1, line_size = 2)
 
 # recombination rate vs fst -- strict groupings
 group <- "group.new"
 stat <- "recomb_rate_fst"
-fst_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "D")
+fst_strict <- coeff.dat %>%
+	filter(!is.na(recomb_rate_fst)) %>%
+	plot_dot_line_plot(., group, stat, label = "", 
+																 pal = pal, y_lab = "", theme_all = NULL, 
+																 point_size = 1, line_size = 2)
 
 # recombination rate vs fst -- strict groupings
 group <- "group.new"
 stat <- "recomb_rate_fst_dxy"
 
-fst_dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "E")
+fst_dxy_strict <- coeff.dat %>%
+	filter(!is.na(recomb_rate_fst_dxy)) %>%
+	plot_dot_line_plot(., group, stat, label = "", 
+																		 pal = pal, y_lab = "", theme_all = NULL, 
+																		 point_size = 1, line_size = 2)
 
 # recombination rate vs fst -- strict groupings
 group <- "group.new"
 stat <- "recomb_rate_dxy"
 
-dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "F")
+dxy_strict <- coeff.dat %>%
+	filter(!is.na(recomb_rate_dxy)) %>%
+	plot_dot_line_plot(., group, stat, label = "", 
+																 pal = pal, y_lab = "", theme_all = NULL, 
+																 point_size = 1, line_size = 2)
 
 ################################################################################
 # create unified plot
@@ -71,10 +95,14 @@ dxy_strict <- plot_dot_line_plot(coeff.dat, group, stat, label = "F")
 
 pdf(file = "figures/figureS3.pdf", height = 8.5, width = 8.5)
 
+labels <- c("fst_relaxed", "fst_strict",
+						"dxy_relaxed", "dxy_strict",
+						"fst_dxy_relaxed", "fst_dxy_strict")
+
 plot_grid(fst_relaxed, fst_strict, 
-					dxy_relaxed, dxy_strict,
 					fst_dxy_relaxed, fst_dxy_strict,
-					ncol = 2)
+					dxy_relaxed, dxy_strict,
+					ncol = 2, labels = labels, align = "hv")
 
 dev.off()
 

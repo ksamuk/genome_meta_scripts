@@ -65,7 +65,7 @@ if (length(args) > 0){
 	} else if (args[[1]] == "dxy"){
 		linear_model_function <- fit_linear_model_dxy
 		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
-	} else{
+	}else if (args[[1]] == "fst_dxy"){
 		linear_model_function <- fit_linear_model_fst_dxy
 		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
 	}
@@ -81,8 +81,8 @@ if (length(args) > 0){
 			coeff.df <- lapply(stats.files, match_evs, linear_model_function = linear_model_function)
 		}
 }else{
-	coeff.df <- lapply(stats.files, match_evs, linear_model_function = fit_linear_model_fst)
-}
+	print("No arguements provided, aborting.")
+ }
 #bind into a data frame
 coeff.dat <- do.call("rbind", coeff.df)
 

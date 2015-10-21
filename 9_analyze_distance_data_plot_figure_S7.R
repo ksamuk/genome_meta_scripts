@@ -28,8 +28,8 @@ pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 # df containing mean fst values for all populations
 fst.df <- read.table("meta_data/fst_df.txt", header = TRUE, stringsAsFactors = FALSE)
 
-# df containing linear model coefficients for outliers vs. recomb rate
-fst.model.fits <- read.table("analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
+# dfs containing linear model coefficients for outliers vs. recomb rate
+fst.model.fits <- initialize_coeff_dat_files()
 
 # df containing distances (least cost, great circle) between populations
 # also measures of isolation from ocean (dist to coast, i.e. how inland, for each population)
@@ -43,26 +43,20 @@ dist.df <- read.table("meta_data/pop_geo_distances.txt", header = TRUE, stringsA
 all.df <- cbind(fst.model.fits, dist.df[,7:10], fst.df$fst)
 names(all.df)[length(all.df)] <- "fst"
 
-# create a 
-fst.iso.resid <- all.df %>%
-	mutate(isolation.sum = dist.to.coast1 + dist.to.coast2) %>%
-	lm(fst ~ isolation.sum, data = .) %>%
-	residuals
-
-all.df$fst.resid <- fst.iso.resid 
-
+# add in combined measures of allopatry (simple transformations of distance data)
 all.df <- all.df %>% 
 	mutate(isolation.sum = dist.to.coast1 + dist.to.coast2)%>%
 	mutate(comparison = paste0(pop1, pop2))%>%
 	rowwise() %>%
-	mutate(isolation.max = max(dist.to.coast1, dist.to.coast2)) 
+	mutate(isolation.max = max(dist.to.coast1, dist.to.coast2))
 
-#########################
-# Figure S7
-#########################
+all.df$ecology <- gsub("D", "Divergent", all.df$ecology)
+all.df$ecology <- gsub("S", "Parallel", all.df$ecology)
 
-pdf(file = "figures/figureS7.pdf", height = 8.5, width = 8.5, onefile = FALSE)
-	
+##################################
+# Size / theme for figs s7 - s9
+##################################
+
 size_all <- 2
 alpha_all <- 0.2
 
@@ -72,49 +66,34 @@ theme_all <- theme_hc(base_size = 16) +
 				strip.text.x = element_blank(),
 				axis.text.x = element_text(angle = 45, hjust = 1)) 
 
-isolation_sum_plot <- all.df %>%
-	ggplot(aes(x = isolation.sum, y = recomb_rate, color = ecology, label = comparison)) +
-	geom_point(size = size_all, alpha = alpha_all)+
-	scale_color_manual(values = pal[3:4])+
-	geom_smooth(method = "lm", size = size_all)+
-	facet_wrap(~ ecology)+
-	theme_all+
-	xlab("Non-oceanic distance (km)")+
-	ylab("Recombination coeffficient")
-	
+##################################
+# Figures S7 - S9
+##################################
 
-gc_distance_plot <- all.df %>%
-	ggplot(aes(x = euc.distance, y = recomb_rate, color = ecology, label = comparison))+
-	geom_point(size = size_all, alpha = alpha_all)+
-	scale_color_manual(values = pal[3:4])+
-	geom_smooth(method = "lm", size = size_all)+
-	theme_all+
-	facet_wrap(~ ecology)+
-	xlab("Great circle distance (km)")+
-	ylab("Recombination coeffficient")
+# S7
+pdf(file = "figures/figureS7.pdf", height = 8.5, width = 8.5, onefile = FALSE)
 
-lc_distance_plot <- all.df %>%
-	ggplot(aes(x = least.cost.distance, y = recomb_rate, color = ecology, label = comparison)) +
-	geom_point(size = size_all, alpha = alpha_all)+
-	scale_color_manual(values = pal[3:4])+
-	geom_smooth(method = "lm", size = size_all)+
-	theme_all+
-	facet_wrap(~ ecology)+
-	xlab("Least cost distance (km)")+
-	ylab("Recombination coeffficient")
+coeff_type <- "recomb_rate_fst"
+coeff_name <- "Recombination rate vs. \nFST outlier coeffficient"
+plot_coef_vs_distance(all.df, coeff_type, coeff_name,size_all, alpha_all, theme_all)
 
-fst_plot <- all.df %>%
-	ggplot(aes(x = fst, y = recomb_rate, color = ecology, label = comparison)) +
-	geom_point(size = size_all, alpha = alpha_all)+
-	#geom_text(size = 3)+
-	scale_color_manual(values = pal[3:4])+
-	geom_smooth(method = "lm", size = size_all)+
-	theme_all +
-	facet_wrap(~ ecology)+
-	xlab("Average FST")+
-	ylab("Recombination coeffficient")
-	
-plot_grid(isolation_sum_plot, gc_distance_plot, lc_distance_plot, fst_plot)
+dev.off()
+
+# S8
+pdf(file = "figures/figureS8.pdf", height = 8.5, width = 8.5, onefile = FALSE)
+
+coeff_type <- "recomb_rate_dxy"
+coeff_name <- "Recombination rate vs. \nDXY outlier coeffficient"
+plot_coef_vs_distance(all.df, coeff_type, coeff_name,size_all, alpha_all, theme_all)
+
+dev.off()
+
+# S9
+pdf(file = "figures/figureS9.pdf", height = 8.5, width = 8.5, onefile = FALSE)
+
+coeff_type <- "recomb_rate_fst_dxy"
+coeff_name <- "Recombination rate vs. \nFST/DXY outlier coeffficient"
+plot_coef_vs_distance(all.df, coeff_type, coeff_name,size_all, alpha_all, theme_all)
 
 dev.off()
 

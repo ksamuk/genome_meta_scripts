@@ -1,4 +1,6 @@
 initialize_coeff_dat_files<- function(){
+	
+	rename <- dplyr::rename
 
 	# choose either fst or fst/dxy 
 	coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
@@ -8,19 +10,24 @@ initialize_coeff_dat_files<- function(){
 	coeff.dat.fst <- coeff.dat.fst %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 		rename(recomb_rate_fst = recomb_rate) %>%
+		rename(intercept_fst = intercept) %>%
 		select(comparison, pop1, ecotype1, pop2, ecotype2, 
 					 reg1, reg2, geography, geography2, ecology, 
-					 group, group2, recomb_rate_fst)
+					 group, group2, intercept_fst, recomb_rate_fst)
 	
-	coeff.dat.fst.dxy <- coeff.dat.dxy %>%
+	coeff.dat.fst.dxy <- coeff.dat.fst.dxy %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 		rename(recomb_rate_fst_dxy = recomb_rate) %>%
-		select(comparison, recomb_rate_fst_dxy)
+		rename(intercept_fst_dxy = intercept) %>%
+		filter(recomb_rate_fst_dxy > -3) %>% # remove models that failed to converge (-ve)
+		filter(recomb_rate_fst_dxy < 3) %>% # remove models that failed to converge (+ve)
+		select(comparison, intercept_fst_dxy, recomb_rate_fst_dxy)
 	
 	coeff.dat.dxy <- coeff.dat.dxy %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 		rename(recomb_rate_dxy = recomb_rate) %>%
-		select(comparison, recomb_rate_dxy)
+		rename(intercept_dxy = intercept) %>%
+		select(comparison, intercept_dxy, recomb_rate_dxy)
 	
 	coeff.dat <- left_join(coeff.dat.fst, coeff.dat.dxy)
 	coeff.dat <- left_join(coeff.dat, coeff.dat.fst.dxy)
