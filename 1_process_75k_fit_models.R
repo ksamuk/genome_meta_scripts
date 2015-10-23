@@ -68,6 +68,9 @@ if (length(args) > 0){
 	}else if (args[[1]] == "fst_dxy"){
 		linear_model_function <- fit_linear_model_fst_dxy
 		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
+	}else if (args[[1]] == "hs"){
+		linear_model_function <- fit_linear_model_hs
+		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
 	}
 	
 	# check if multicore mode and run

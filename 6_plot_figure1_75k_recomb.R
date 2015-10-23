@@ -107,4 +107,19 @@ plot_averaged_regression_lines(coeff.dat, groups, pal, group_variable[1],
 															 "dxy",
 															 ylim = c(0,0.1), xlim = c(0,50), 
 															 ylab = c(expression('D'["XY"]*" Outlier Probability")))
+coeff.dat %>%
+ggplot(aes(x = group2, y = recomb_rate_dxy)) +
+	geom_point()
+
+coeff.dat %>%
+	filter(group2 == "para_S") %>%
+	ggplot(aes(x = group2, y = recomb_rate_dxy)) +
+	geom_point()
+
+	summarise(intercept_dxy_mean = mean(intercept_dxy, na.rm = TRUE), slope_dxy_mean = mean(recomb_rate_dxy, na.rm = TRUE))
+
+
+coeff.dat %>% 
+	summarise(intercept_fst_mean = mean(intercept_fst, na.rm = TRUE), slope_fst_mean = mean(recomb_rate_fst, na.rm = TRUE))
+
 
