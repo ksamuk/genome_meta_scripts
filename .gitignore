@@ -47,3 +47,7 @@ Icon
 *_75000.txt
 *.clustered.txt
 map_out/
+stats/
+analysis_ready/*
+*.trans
+*marmap.*

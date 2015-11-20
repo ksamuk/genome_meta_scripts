@@ -54,8 +54,8 @@ plot_averaged_regression_lines(coeff.dat, groups, pal, group_variable[2],
 															 ylim = c(0,0.16), xlim = c(0,50), 
 															 ylab = c(expression('F'["ST"]*" Outlier Probability")))
 plot_averaged_regression_lines(coeff.dat, groups, pal, group_variable[2], 
-															 "fst_dxy", adjust = 0.0001, label ="B",
-															 ylim = c(0,0.025), xlim = c(0,50), 
+															 "dxy", adjust = 0.0001, label ="B",
+															 ylim = c(0,0.1), xlim = c(0,50), 
 															 ylab = c(expression('Joint F'["ST"]*'/D'["XY"]*" Outlier Probability")))	
 
 legend(20,0.023, # places a legend at the appropriate place 

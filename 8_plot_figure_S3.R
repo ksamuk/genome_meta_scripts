@@ -50,10 +50,10 @@ fst_dxy_relaxed <- coeff.dat %>%
 
 # recombination rate vs dxy -- relaxed groupings
 group <- "group2.new"
-stat <- "recomb_rate_dxy"
+stat <- "intercept_dxy"
 
 dxy_relaxed <- coeff.dat %>%
-	filter(!is.na(recomb_rate_dxy)) %>%
+	filter(!is.na(intercept_dxy)) %>%
 	plot_dot_line_plot(., group, stat, label = "", 
 																	pal = pal, y_lab = "", theme_all = NULL, 
 																	point_size = 1, line_size = 2)
