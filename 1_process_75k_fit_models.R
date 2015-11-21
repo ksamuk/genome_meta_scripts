@@ -84,7 +84,7 @@ if (length(args) > 0){
 			coeff.df <- lapply(stats.files, match_evs, linear_model_function = linear_model_function)
 		}
 }else{
-	print("No arguements provided, aborting.")
+	print("No arguments provided, aborting.")
  }
 #bind into a data frame
 coeff.dat <- do.call("rbind", coeff.df)

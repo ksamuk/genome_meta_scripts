@@ -34,17 +34,15 @@ stats_df <- add_region_data(stats_df)
 stats_df <- stats_df %>%
 	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = "."))
 
+stats_df <- stats_df %>%
+	group_by(comparison) %>%
+	mutate(dxy_avg = dxy / sites) %>%
+	mutate(dxy_avg_outlier = is.outlier(dxy_avg))
+
 rep.comparisons <- c("cp.marine.sk.marine", 
-										 "geneva.lake.misty.lake", 
+										 "constance.stream.joes.stream", 
 										 "mariager.marine.joes.lake", 
 										 "pri.limnetic.pri.benthic")
-
-stats_df %>%
-	group_by(group2, comparison) %>%
-	summarise(data_windows = sum(!is.na(fst))) %>%
-	filter(group2 == "allo_S") %>%
-	arrange(desc(data_windows)) %>%
-	View
 
 rep.comparisons %in% unique(stats_df$comparison)
 
@@ -58,7 +56,7 @@ stats_df %>%
 	filter(comparison %in% rep.comparisons) %>%
 	filter(var.sites >= 3) %>%
 	group_by(comparison) %>%
-	filter(lg %in% c(1,4,7)) %>%
+	filter(lg %in% c(4,7)) %>%
 	mutate(fst_scale = scale(fst, center = FALSE)) %>%
 	mutate(fst_outlier = ifelse(fst.outlier == TRUE, 1, NA)) %>%
 	mutate(dxy_outlier = ifelse(dxy.outlier == TRUE, 1, NA)) %>%
@@ -95,7 +93,7 @@ rep.comparisons
 stats_df %>%
 	filter(comparison %in% rep.comparisons) %>%
 	group_by(comparison) %>%
-	filter(lg %in% c(1,4,7)) %>%
+	filter(lg %in% c(4,7)) %>%
 	mutate(fst_scale = scale(fst, center = FALSE)) %>%
 	ungroup %>%
 	filter(recomb_rate <= 30 ) %>%
@@ -119,20 +117,21 @@ ggsave(filename = "figures/Figure3_axis_hack.pdf", height = 8.5, width = 8.5)
 
 stats_df %>%
 	filter(comparison %in% rep.comparisons) %>%
+	filter(sites > 4) %>%
 	filter(var.sites > 4) %>%
 	group_by(comparison) %>%
-	filter(lg %in% c(1,4,7)) %>%
-	mutate(dxy_outlier = ifelse(dxy.outlier == TRUE, 0.02, NA)) %>%
+	filter(lg %in% c(4,7)) %>%
+	#mutate(dxy_outlier = ifelse(dxy.outlier == TRUE, 0.02, NA)) %>%
 	ungroup %>%
-	filter(recomb_rate <= 30 ) %>%
-	ggplot(aes(x = midpos/1000000, y = dxy))+
+	filter(recomb_rate <= 30) %>%
+	ggplot(aes(x = midpos/1000000, y = dxy/sites))+
 	geom_line(color = "grey")+
-	geom_point(aes(x = midpos/1000000, y = dxy_outlier), shape = "|", size = 4)+
+	#geom_point(aes(x = midpos/1000000, y = dxy_outlier), shape = "|", size = 4)+
 	stat_smooth(method = "loess", aes(color = group2), size = 1.5, se = FALSE)+
-	stat_smooth(method = "loess", aes(color = "zzgreen", x = midpos/1000000, y = abs(hexp1-hexp2)), size = 1.5, se = FALSE, linetype = 1)+
-	stat_smooth(method = "loess", aes(color = "zzz", x = midpos/1000000, y = recomb_rate/500), size = 1.5, se = FALSE, linetype ="11111111")+
+	#stat_smooth(method = "loess", aes(color = "zzgreen", x = midpos/1000000, y = abs(hexp1-hexp2)), size = 1.5, se = FALSE, linetype = 1)+
+	stat_smooth(method = "loess", aes(color = "zzz", x = midpos/1000000, y = recomb_rate/100000), size = 1.5, se = FALSE, linetype ="11111111")+
 	theme_hc_border()+
-	ylim(0, 0.02)+
+	#ylim(0, 0.02)+
 	ylab(expression('D'["XY"]))+
 	xlab("Chromosomal position (MB)")+
 	theme(panel.grid = element_blank(),
@@ -140,24 +139,27 @@ stats_df %>%
 				legend.position = "none",
 				panel.border = element_rect(color="grey", fill=NA))+
 	facet_grid(group2~lg)+
-	scale_color_manual(values = c(pal,5,1))+
+	scale_color_manual(values = c(pal,1))+
 	scale_x_continuous(labels = comma)
 
 
 
 stats_df %>%
 	group_by(comparison) %>%
-	filter(sites > 3) %>%
-	sample_frac(0.25) %>%
+	#filter(sites > 20) %>%
+	filter(recomb_rate <= 25 )%>%
+	filter(var.sites >= 3) %>%
+	#sample_frac(0.25) %>%
 	#filter(lg %in% c(1,4,7)) %>%
-	ggplot(aes(x = dxy))+
-	#ggplot(aes(x = log(dxy+1), y = fst))+
-	#ggplot(aes(x = recomb_rate, y = fst))+
+	#ggplot(aes(x = dxy))+
+	#ggplot(aes(x = recomb_rate , y = as.numeric(dxy_avg_outlier)))+
+  ggplot(aes(x = recomb_rate , y = log(dxy_avg+1)))+
+	#ggplot(aes(x = sites, y = var.sites))+
 	#ggplot(aes(x = recomb_rate, y = dxy/(var.sites/sites)))+
-	#geom_point()+
-	geom_histogram()+
-	#geom_smooth()+
-	facet_wrap(~group2, scales = "free_y")
+	geom_point()+
+	#geom_histogram()+
+	#geom_smooth(method = "lm")+
+	facet_wrap(~group2, scales = "free")
 	
 	stats_df %>%
 		filter(var.sites > 10) %>%
