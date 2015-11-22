@@ -103,27 +103,29 @@ match_evs <- function(stats.file.name, linear_model_function = linear_model_func
 	# filter and call outliers
 	matched.all <- filter_data_call_outliers_function(matched.all)
 	
-	# fit linear model and catch failures to converge (e.g. due to insufficient data)
+	# if there is extremely low data, skip model fitting
+
+		# fit linear model and catch failures to converge (e.g. due to insufficient data)
+		
+		#blank the warning/error messages
+		linear_model_warning <- NULL
+		linear_model_error <- NULL
+		
+		# fit model and catch warning (if any)
+		withCallingHandlers(model.out <- linear_model_function(matched.all), warning = function(w){
+			linear_model_warning <<- w$message
+			invokeRestart("muffleWarning")
+		})
 	
-	#blank the warning
-	linear_model_warning <- NULL
-	
-	# fit model and catch warning (if any)
-	withCallingHandlers(model.out <- linear_model_function(matched.all), warning = function(w){
-		linear_model_warning <<- w$message
-		invokeRestart("muffleWarning")
-	})
-	
-	# collect coefficients
-	coeffs <- as.list(model.out$coefficients)
-	names(coeffs)[1] <- "intercept"
-	
-	# if model threw warning, print it and set coeffs as NA
-	if(length(linear_model_warning) >= 1){
-		print(linear_model_warning)
-		for (i in 1:length(coeffs))
-		coeffs[i] <- NA
-	}
+		# if model threw warning, print it and set coeffs as NA
+		if(length(linear_model_warning) >= 1){
+			print(linear_model_warning)
+			for (i in 1:length(coeffs))
+				coeffs[i] <- NA
+		} else{
+			coeffs <- as.list(model.out$coefficients)
+			names(coeffs)[1] <- "intercept"
+		}
 	
 	# parse file name
 	file.name.stripped <- sapply(strsplit(stats.file.name, split = "/"), function(x)gsub(".txt","",x[length(x)]))
