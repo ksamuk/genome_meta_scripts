@@ -103,27 +103,27 @@ match_evs <- function(stats.file.name, linear_model_function = linear_model_func
 	# filter and call outliers
 	matched.all <- filter_data_call_outliers_function(matched.all)
 	
-	#filter matched.all
+	# fit linear model and catch failures to converge (e.g. due to insufficient data)
 	
-	# Recombination distances >25cM: not included
-	#matched.all$recomb_rate[matched.all$recomb_rate >= 25] <- NA
-	# dS: filter out anything beyond 3 (i.e. the alignment errors)
-	matched.all$ds[matched.all$ds >= 3] <- NA
-	# gene_count: filter out anything beyond 15 (i.e. likely annotation errors/alternative splicing weirdness)
-	matched.all$gene_count[matched.all$gene_count >= 15] <- NA
-	# no lg 19: sex chromosome has odd divergence properties
-	matched.all <- matched.all %>%
-		filter(lg!=19)
-	#hs: legacy, not included in models
-	matched.all <- matched.all %>%
-		mutate(hs = (hexp1+hexp2)/2)
+	#blank the warning
+	linear_model_warning <- NULL
 	
-	# fit linear model
+	# fit model and catch warning (if any)
+	withCallingHandlers(model.out <- linear_model_function(matched.all), warning = function(w){
+		linear_model_warning <<- w$message
+		invokeRestart("muffleWarning")
+	})
 	
-	model.out <- linear_model_function(matched.all)
-	
+	# collect coefficients
 	coeffs <- as.list(model.out$coefficients)
 	names(coeffs)[1] <- "intercept"
+	
+	# if model threw warning, print it and set coeffs as NA
+	if(length(linear_model_warning) >= 1){
+		print(linear_model_warning)
+		for (i in 1:length(coeffs))
+		coeffs[i] <- NA
+	}
 	
 	# parse file name
 	file.name.stripped <- sapply(strsplit(stats.file.name, split = "/"), function(x)gsub(".txt","",x[length(x)]))

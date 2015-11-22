@@ -4,7 +4,6 @@ initialize_coeff_dat_files<- function(){
 
 	# choose either fst or fst/dxy 
 	coeff.dat.fst <- read.table(file = "analysis_ready/75k_stats_model_fits_fst.txt", header = TRUE, stringsAsFactors = FALSE)
-	coeff.dat.fst.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_fst_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
 	coeff.dat.dxy <- read.table(file = "analysis_ready/75k_stats_model_fits_dxy.txt", header = TRUE, stringsAsFactors = FALSE)
 	
 	coeff.dat.fst <- coeff.dat.fst %>%
@@ -15,14 +14,6 @@ initialize_coeff_dat_files<- function(){
 					 reg1, reg2, geography, geography2, ecology, 
 					 group, group2, intercept_fst, recomb_rate_fst)
 	
-	coeff.dat.fst.dxy <- coeff.dat.fst.dxy %>%
-		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
-		rename(recomb_rate_fst_dxy = recomb_rate) %>%
-		rename(intercept_fst_dxy = intercept) %>%
-		filter(recomb_rate_fst_dxy > -3) %>% # remove models that failed to converge (-ve)
-		filter(recomb_rate_fst_dxy < 3) %>% # remove models that failed to converge (+ve)
-		select(comparison, intercept_fst_dxy, recomb_rate_fst_dxy)
-	
 	coeff.dat.dxy <- coeff.dat.dxy %>%
 		mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
 		rename(recomb_rate_dxy = recomb_rate) %>%
@@ -30,7 +21,6 @@ initialize_coeff_dat_files<- function(){
 		select(comparison, intercept_dxy, recomb_rate_dxy)
 	
 	coeff.dat <- left_join(coeff.dat.fst, coeff.dat.dxy)
-	coeff.dat <- left_join(coeff.dat, coeff.dat.fst.dxy)
 	
 	## add in region data (for looser geography)
 	region.dat <- read.table(file = "meta_data/population_regions.txt", header = TRUE, stringsAsFactors = FALSE)
@@ -57,5 +47,8 @@ initialize_coeff_dat_files<- function(){
 	group.rename <- c("Allopatry\nDivergent", "Allopatry\nParallel", "Gene Flow\nDivergent", "Gene Flow\nParallel")
 	coeff.dat$group2.new <- group.rename[match(coeff.dat$group2, group.old.names)]
 	coeff.dat$group.new <- group.rename[match(coeff.dat$group, group.old.names)]
+	
+	# filter out models that failed to converge
+	
 	return(coeff.dat)
 }
