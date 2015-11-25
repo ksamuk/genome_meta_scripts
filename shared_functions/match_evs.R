@@ -118,11 +118,14 @@ match_evs <- function(stats.file.name, linear_model_function = linear_model_func
 	
 		# if model threw warning, print it and set coeffs as NA
 		if(length(linear_model_warning) >= 1){
-			coeffs <- NA
+			print(linear_model_warning)
+			#coeffs <- rep(list(NA), 4)
+			#coeffs <- setNames(coeffs, c("intercept", "recomb_rate", "ds", "gene_count"))
 		} else{
-			coeffs <- as.list(model.out$coefficients)
-			names(coeffs)[1] <- "intercept"
+			linear_model_warning <- NA
 		}
+		coeffs <- as.list(model.out$coefficients)
+		names(coeffs)[1] <- "intercept"
 	
 	# parse file name
 	file.name.stripped <- sapply(strsplit(stats.file.name, split = "/"), function(x)gsub(".txt","",x[length(x)]))
@@ -133,9 +136,11 @@ match_evs <- function(stats.file.name, linear_model_function = linear_model_func
 	ecotype2 <- file.name.split[2] %>% strsplit(split="_") %>% unlist %>% .[2]
 	geography <- file.name.split[3]
 	ecology <- file.name.split[4]
+	n_windows_dxy <- sum(!is.na(matched.all$dxy.outlier))
+	n_windows_fst <- sum(!is.na(matched.all$fst.outlier))
 	
-	row.out <- data.frame(pop1, ecotype1, pop2, ecotype2, geography, ecology, coeffs)
-	
+	row.out <- data.frame(pop1, ecotype1, pop2, ecotype2, geography, ecology, coeffs, linear_model_warning, n_windows_dxy, n_windows_fst)
+	row.out$linear_model_warning <- linear_model_warning
 	return(row.out)
 	
 }

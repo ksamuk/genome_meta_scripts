@@ -15,7 +15,7 @@ library("lazyeval")
 library("Hmisc")
 library("cowplot")
 
-list.files("shared_functions", full.names = TRUE) %>% sapply(source)
+list.files("shared_functions", full.names = TRUE) %>% sapply(source) %>% invisible
 
 select <- dplyr::select
 
@@ -36,7 +36,7 @@ theme_all <- theme_classic(base_size = 12)+
 pal <- c("#E7C11A", "#9BBD95", "#F21A00", "#3B9AB2")
 
 #number of permutations for  tessts
-n_permutations <- 10000
+n_permutations <- 5000
 
 ################################################################################
 # initialize coefficient data files
@@ -48,14 +48,17 @@ coeff.dat <- initialize_coeff_dat_files()
 # perform permutations + plot results
 ################################################################################
 
-
+coeff.dat <- coeff.dat %>%
+	filter(!grepl("ben|lim", coeff.dat$comparison)) %>%
+	filter(n_windows_fst > 200)
+	
 # build a list of combinations of groups (strict, relaxed) 
 # and fit types (fst, fst_dxy, dxy) to permute over (and plot / save pvalues)
 
-stat <- c("recomb_rate_fst", "recomb_rate_fst_dxy", "recomb_rate_dxy")
+stat <- c("recomb_rate_fst", "recomb_rate_dxy")
 stat <- rep(stat, each = 2)
 group_type <- c("group2.new", "group.new")
-group_type <- rep(group_type, 3)
+group_type <- rep(group_type, 2)
 combo.df <- data.frame(stat, group_type, stringsAsFactors = FALSE)
 
 # interate over combo.df (permute, extract p-values, plot)
@@ -88,7 +91,7 @@ labels <- c("fst_relaxed", "fst_strict",
 						"dxy_relaxed", "dxy_strict",
 						"fst_dxy_relaxed", "fst_dxy_strict")
 plot_grid(plots[[1]], plots[[2]], 
-					plots[[3]], plots[[4]], 
+					plots[[3]], plots[[4]]), 
 					plots[[5]], plots[[6]],
 					ncol = 1, labels = labels, align = "hv")
 dev.off()

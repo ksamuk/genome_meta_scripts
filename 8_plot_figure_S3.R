@@ -33,24 +33,15 @@ group <- "group2.new"
 stat <- "recomb_rate_fst"
 
 fst_relaxed <- coeff.dat %>%
+	filter(n_windows_fst > 100) %>%
 	filter(!is.na(recomb_rate_fst)) %>%
 	plot_dot_line_plot(., group, stat, label = "", 
 								pal = pal, y_lab = "", theme_all = NULL, 
 								point_size = 1, line_size = 2)
 
-# recombination rate vs fst/dxy -- relaxed groupings
-group <- "group2.new"
-stat <- "recomb_rate_fst_dxy"
-
-fst_dxy_relaxed <- coeff.dat %>%
-	filter(!is.na(recomb_rate_fst_dxy)) %>%
-	plot_dot_line_plot(., group, stat, label = "", 
-											pal = pal, y_lab = "", theme_all = NULL, 
-											point_size = 1, line_size = 2)
-
 # recombination rate vs dxy -- relaxed groupings
 group <- "group2.new"
-stat <- "intercept_dxy"
+stat <- "recomb_rate_dxy"
 
 dxy_relaxed <- coeff.dat %>%
 	filter(!is.na(intercept_dxy)) %>%
@@ -66,16 +57,6 @@ fst_strict <- coeff.dat %>%
 	plot_dot_line_plot(., group, stat, label = "", 
 																 pal = pal, y_lab = "", theme_all = NULL, 
 																 point_size = 1, line_size = 2)
-
-# recombination rate vs fst -- strict groupings
-group <- "group.new"
-stat <- "recomb_rate_fst_dxy"
-
-fst_dxy_strict <- coeff.dat %>%
-	filter(!is.na(recomb_rate_fst_dxy)) %>%
-	plot_dot_line_plot(., group, stat, label = "", 
-																		 pal = pal, y_lab = "", theme_all = NULL, 
-																		 point_size = 1, line_size = 2)
 
 # recombination rate vs fst -- strict groupings
 group <- "group.new"
@@ -96,10 +77,8 @@ dxy_strict <- coeff.dat %>%
 pdf(file = "figures/figureS3.pdf", height = 8.5, width = 8.5)
 
 labels <- c("fst_relaxed", "fst_strict",
-						"dxy_strict","dxy_relaxed", 
-						"fst_dxy_relaxed", "fst_dxy_strict")
+						"dxy_strict","dxy_relaxed")
 
 plot_grid(fst_relaxed, fst_strict, 
-					fst_dxy_relaxed, fst_dxy_strict,
 					dxy_relaxed, dxy_strict,
 					ncol = 2, labels = labels, align = "hv")

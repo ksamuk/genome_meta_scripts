@@ -11,7 +11,7 @@ if (length(commandArgs(TRUE)) > 0){
 	args <- commandArgs(TRUE)
 	args <- as.list(args)
 	
-	if(!(args[[1]] %in% c("fst","dxy","fst_dxy"))){
+	if(!(args[[1]] %in% c("fst","dxy","fst_dxy", "fst_quant", "dxy_quant", "hs"))){
 		stop("Invalid first argument (outlier type)! Valid values are \'fst\',\'dxy\' and \'fst_dxy\' e.g.: \n\'Rscript 1_process_75k_fst.R fst\'")
 	}
 	
@@ -71,6 +71,15 @@ if (length(args) > 0){
 	}else if (args[[1]] == "hs"){
 		linear_model_function <- fit_linear_model_hs
 		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
+	} else if (args[[1]] == "fst_quant"){
+		linear_model_function <- fit_linear_model_fst_quant
+		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
+	} else if (args[[1]] == "dxy_quant"){
+		linear_model_function <- fit_linear_model_dxy_quant
+		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
+	} else if (args[[1]] == "hs"){
+		linear_model_function <- fit_linear_model_hs
+		file.name <- paste0("75k_stats_model_fits_",args[[1]],".txt")
 	}
 	
 	# check if multicore mode and run
@@ -90,7 +99,6 @@ if (length(args) > 0){
 coeff.dat <- do.call("rbind", coeff.df)
 
 #remove nas
-coeff.dat <- coeff.dat[!is.na(coeff.dat$recomb_rate),]
 coeff.dat <- coeff.dat %>%
   mutate(group = paste0(geography,"_",ecology))
 
@@ -106,6 +114,6 @@ coeff.dat <- add_region_data(coeff.dat)
 
 # write to file
 dir.create("analysis_ready") %>% invisible
-write.table(coeff.dat, file = file.path("analysis_ready",file.name), row.names = FALSE, quote = FALSE)
+write.table(coeff.dat, file = file.path("analysis_ready",file.name), row.names = FALSE, quote = FALSE, sep = "\t")
 
 

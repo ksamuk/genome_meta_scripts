@@ -34,17 +34,10 @@ stats_df <- add_region_data(stats_df)
 stats_df <- stats_df %>%
 	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = "."))
 
-stats_df <- stats_df %>%
-	group_by(comparison) %>%
-	mutate(dxy_avg = dxy / sites) %>%
-	mutate(dxy_avg_outlier = is.outlier(dxy_avg))
-
 rep.comparisons <- c("cp.marine.sk.marine", 
 										 "constance.stream.joes.stream", 
 										 "mariager.marine.joes.lake", 
 										 "pri.limnetic.pri.benthic")
-
-rep.comparisons %in% unique(stats_df$comparison)
 
 ################################################################################
 # Main plot: FST
@@ -56,15 +49,16 @@ stats_df %>%
 	filter(comparison %in% rep.comparisons) %>%
 	filter(var.sites >= 3) %>%
 	group_by(comparison) %>%
-	filter(lg %in% c(4,7)) %>%
-	mutate(fst_scale = scale(fst, center = FALSE)) %>%
-	mutate(fst_outlier = ifelse(fst.outlier == TRUE, 1, NA)) %>%
-	mutate(dxy_outlier = ifelse(dxy.outlier == TRUE, 1, NA)) %>%
+	filter(lg %in% c(4)) %>%
+	mutate(fst_outlier_value = ifelse(fst.outlier == TRUE, fst, NA)) %>%
+	mutate(fst_non_outlier_value = ifelse(fst.outlier == FALSE, fst, NA)) %>%
 	ungroup %>%
 	filter(recomb_rate <= 30 ) %>%
 	ggplot(aes(x = midpos/1000000, y = fst))+
-	geom_line(color = "grey")+
-	geom_point(aes(x = midpos/1000000, y = fst_outlier), shape = "|", size = 4)+
+	geom_point(aes(x = midpos/1000000, y = fst_outlier_value, color = "zzzzred"))+
+	geom_point(aes(x = midpos/1000000, y = fst_non_outlier_value, color = "zzzzgrey"))+
+	#geom_line(color = "grey")+
+	#geom_point(aes(x = midpos/1000000, y = fst_outlier), shape = "|", size = 4)+
 	stat_smooth(method = "loess", aes(color = group2), size = 1.5, se = FALSE)+
 	stat_smooth(method = "loess", aes(color = "zzz", x = midpos/1000000, y = recomb_rate/10), size = 1.5, se = FALSE, linetype ="11111111")+
 	theme_hc_border()+
@@ -76,9 +70,9 @@ stats_df %>%
 				legend.position = "none",
 				panel.border = element_rect(color="grey", fill=NA))+
 	facet_grid(group2~lg)+
-	scale_color_manual(values = c(pal,1))+
+	scale_color_manual(values = c(pal, 1, "grey" ,1))+
 	scale_x_continuous(labels = comma)
-ggsave(filename = "figures/Figure3.pdf", height = 8.5, width = 8.5)
+ggsave(filename = "figures/Figure3.pdf", height = 8.5, width = 4.25)
 
 ################################################################################
 # Get recomb_rate axes: FST
@@ -149,17 +143,20 @@ stats_df %>%
 	#filter(sites > 20) %>%
 	filter(recomb_rate <= 25 )%>%
 	filter(var.sites >= 3) %>%
+	mutate(low_site_window = sites < 500) %>%
+	#filter(dxy < 0.05)%>%
 	#sample_frac(0.25) %>%
 	#filter(lg %in% c(1,4,7)) %>%
-	#ggplot(aes(x = dxy))+
+	ggplot(aes(x = sites))+
 	#ggplot(aes(x = recomb_rate , y = as.numeric(dxy_avg_outlier)))+
-  ggplot(aes(x = recomb_rate , y = log(dxy_avg+1)))+
+  #ggplot(aes(y = as.numeric(low_site_window), x = recomb_rate))+
 	#ggplot(aes(x = sites, y = var.sites))+
 	#ggplot(aes(x = recomb_rate, y = dxy/(var.sites/sites)))+
-	geom_point()+
-	#geom_histogram()+
-	#geom_smooth(method = "lm")+
-	facet_wrap(~group2, scales = "free")
+	#geom_point(alpha = 0.01)+
+	geom_histogram(binwidth = 100)+
+	xlim(0,6000)+
+  #geom_smooth()+
+	facet_wrap(~group2, scales = "free_y")
 	
 	stats_df %>%
 		filter(var.sites > 10) %>%

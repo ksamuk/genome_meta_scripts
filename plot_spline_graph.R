@@ -34,6 +34,30 @@ stats_df <- read_delim(file = "analysis_ready/75k_stats_combined.txt", delim = "
 stats_df <- stats_df %>%
 	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = "."))
 
+stats_df_filt <- stats_df %>%
+	filter(!is.na(fst)) %>%
+	filter(!is.infinite(fst)) %>%
+	filter(recomb_rate <= 25) %>% 
+	filter(var.sites >= 2) %>%
+	filter(ds <= 3) %>%
+	filter(gene_count <= 15) %>%
+	filter(lg!=19) %>%
+	mutate(dxy_adj = ifelse(sites >= 500, dxy, NA)) %>% 
+	group_by(comparison) %>%
+	mutate(fst.outlier = is.outlier(fst))%>%
+	mutate(dxy.outlier = is.outlier(dxy)) %>%
+	mutate(both.outlier = fst.outlier & dxy.outlier)%>%
+	mutate(hs = (hexp1+hexp2)/2) %>%
+	ungroup
+
+stats_df_filt %>%
+	mutate(low_recomb = ifelse(recomb_rate <= 5, TRUE, FALSE)) %>%
+	ggplot(aes(x = recomb_rate, y = as.numeric(dxy.outlier)))+
+	#ggplot(aes(x = recomb_rate, y = log(dxy_adj+1)))+
+	geom_point()+
+	geom_smooth(method = "lm")+
+	facet_wrap(~group2)
+
 # fst "scaled" plot
 stats_df %>%
 	group_by(comparison) %>%
@@ -44,12 +68,35 @@ stats_df %>%
 	sample_frac(0.2) %>%
 	ggplot(aes(x = recomb_rate, y = fst))+
 	#geom_hex(size = 20)+
-	geom_point(aes(color = group2), size = 2, alpha = 0.1)+
+	geom_density2d()+
+	#geom_point(aes(color = group2), size = 2, alpha = 0.1)+
 	#stat_smooth(method= "lm", color = "black", size = 2)+
-	theme_hc()+
+	#theme_hc()+
 	facet_wrap(~group2)+
 	#scale_color_manual(values = pal)
 ggsave(filename = "scaled_fst_plot.png", height = 8.5, width = 11)
+
+stats_df_filt %>%
+	mutate(comparison = reorder(comparison, factor(group2) %>% as.numeric)) %>%
+	filter(recomb_rate <= 25 ) %>%
+	group_by(comparison) %>%
+	sample_n(200, replace = TRUE) %>%
+	ggplot(aes(x = recomb_rate, y = fst.outlier %>% as.numeric %>% jitter(0.5), color = hs)) +
+	geom_point(alpha = 0.5, size = 2)+
+	geom_smooth(method = "loess")+
+	facet_wrap(~group2)
+
+
+stat_function(aes(y = 0), fun = avg_regression_functions[[i]], colour = pal[i], size = 3)
+
+stat_density2d(aes(alpha=..level.., fill=..level..), size=2, 
+							 bins = 30, geom="polygon") + 
+	scale_fill_gradient() +
+	scale_alpha(range = c(0.00, 1), guide = FALSE) +
+	#geom_density2d(colour="black", bins = 30)+
+
+
+
 
 #lazer beam plot
 rep.comparisons <- list.files("stats/snp_representative") %>% 
