@@ -1,11 +1,8 @@
 plot_dot_line_plot <- function(data, group, stat, label = "", pal = pal, y_lab = "", theme_all = NULL, point_size = 1, line_size = 2){
 	
 	if (length(theme_all) <= 0){
-		theme_all <- theme_hc(base_size = 16) +
-			theme(axis.title.y = element_blank(),
-						axis.text.x = element_blank(),
-						axis.ticks.x = element_blank(),
-						plot.margin = unit(c(0,0,0,0),"cm"))
+		theme_all <- theme_hc(base_size = 16)
+			#+theme(plot.margin = unit(c(1,1,1,1),"cm"))
 	}
 	
 	plot <- data %>%

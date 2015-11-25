@@ -51,11 +51,14 @@ stats_df_filt <- stats_df %>%
 	ungroup
 
 stats_df_filt %>%
-	mutate(low_recomb = ifelse(recomb_rate <= 5, TRUE, FALSE)) %>%
-	ggplot(aes(x = recomb_rate, y = as.numeric(dxy.outlier)))+
+	group_by(comparison) %>%
+	sample_n(100, replace = TRUE) %>%
+	#mutate(low_recomb = ifelse(recomb_rate <= 5, TRUE, FALSE)) %>%
+	ggplot(aes(x = group2, y = hs, color = fst.outlier))+
 	#ggplot(aes(x = recomb_rate, y = log(dxy_adj+1)))+
-	geom_point()+
-	geom_smooth(method = "lm")+
+	geom_boxplot()+
+	#geom_point()+
+	#geom_smooth()+
 	facet_wrap(~group2)
 
 # fst "scaled" plot
