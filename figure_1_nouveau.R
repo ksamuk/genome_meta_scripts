@@ -96,6 +96,29 @@ rep_plot <- stats_df %>%
 
 ggsave(rep_plot, filename = "figures/Figure3_rep.pdf", height = 8.5, width = 4.25)
 
+# hack to get secondary y-axis
+stats_df %>%
+	group_by(comparison) %>%
+	filter(lg  == 4) %>%
+	mutate(fst_outlier_value = ifelse(fst.outlier == TRUE, fst, NA)) %>%
+	mutate(fst_non_outlier_value = ifelse(fst.outlier == FALSE, fst, NA)) %>%
+	ungroup %>%
+	ggplot(aes(x = midpos/1000000, y = recomb_rate))+
+	stat_smooth(method = "loess", aes(color = "zzz", x = midpos/1000000, y = recomb_rate), size = 1.5, se = FALSE, linetype = 3)+
+	theme_hc()+
+	ylim(0, 10)+
+	ylab("Recombination rate cM/MB")+
+	xlab("Chromosomal position (MB)")+
+	theme(panel.grid = element_blank(),
+				strip.background = element_blank(),
+				legend.position = "none",
+				panel.border = element_rect(color="grey", fill=NA),
+				strip.text = element_blank())+
+	facet_grid(group2~lg)+
+	scale_color_manual(values = c(pal,1))+
+	scale_x_continuous()
+ggsave(filename = "figures/Figure3_rep_axis_hack.pdf", height = 8.5, width = 4.5)
+
 ################################################################################
 # Figure 1 B: Averaged Fitted model coefficients 
 ################################################################################
@@ -109,7 +132,7 @@ avg_regression_functions <- coeff.dat %>% filter(n_windows_fst > 100) %>% create
 # an empty plot
 avg_reg_plot <- ggplot()+
 	scale_x_continuous(limits=c(0, 25), expand=c(0,0))+
-	scale_y_continuous(limits=c(0, 0.2), expand = c(0,0)) +
+	scale_y_continuous(limits=c(0, 0.175), expand = c(0,0)) +
 	xlab("Recombination rate (cM/MB)") +
 	ylab(expression('F'["ST"]*" Outlier Probability"))
 

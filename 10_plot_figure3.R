@@ -79,18 +79,12 @@ ggsave(filename = "figures/Figure3.pdf", height = 8.5, width = 4.25)
 ################################################################################
 
 #lazer beam plot
-rep.comparisons <- list.files("stats/snp_representative") %>% 
-	gsub(".stats.txt.gz", "", .) %>% 
-	gsub("\\.allo|\\.para|\\.S|\\.D", "", .) %>%
-	gsub("_", "\\.", .)
-rep.comparisons
 stats_df %>%
-	filter(comparison %in% rep.comparisons) %>%
 	group_by(comparison) %>%
-	filter(lg %in% c(4,7)) %>%
-	mutate(fst_scale = scale(fst, center = FALSE)) %>%
+	filter(lg  == 4) %>%
+	mutate(fst_outlier_value = ifelse(fst.outlier == TRUE, fst, NA)) %>%
+	mutate(fst_non_outlier_value = ifelse(fst.outlier == FALSE, fst, NA)) %>%
 	ungroup %>%
-	filter(recomb_rate <= 30 ) %>%
 	ggplot(aes(x = midpos/1000000, y = recomb_rate))+
 	stat_smooth(method = "loess", aes(color = "zzz", x = midpos/1000000, y = recomb_rate), size = 1.5, se = FALSE, linetype = 3)+
 	theme_hc()+
@@ -103,7 +97,7 @@ stats_df %>%
 	facet_grid(group2~lg)+
 	scale_color_manual(values = c(pal,1))+
 	scale_x_continuous()
-ggsave(filename = "figures/Figure3_axis_hack.pdf", height = 8.5, width = 8.5)
+ggsave(filename = "figures/Figure3_rep_axis_hack.pdf", height = 8.5, width = 4.5)
 
 ################################################################################
 # DXY
