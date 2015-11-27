@@ -92,10 +92,53 @@ fst_fst <- all.df %>%
 	xlab("Genome-wide average FST")+
 	ylab("Recombination rate vs. \nFST outlier coeffficient")
 
-
 fig3 <- plot_grid(dist_fst, fst_fst, ncol = 1)
 
 save_plot(fig3, file = "figures/Figure3.pdf", base_height = 8.5, base_width = 8.5)
+
+##################################
+# Supporting linear models
+##################################
+
+# fst: distance 
+
+fit_dist_bias <- all.df %>%
+	filter(n_windows_fst > 200) %>%
+	mutate(sqrt_euc = sqrt(euc.distance+1)) %>%
+	lm(data = ., recomb_rate_fst~sqrt_euc)
+
+anova(fit_dist_bias)
+summary(fit_dist_bias)
+
+# fst: fst*ecology
+
+fit_ecol_bias <- all.df %>%
+	filter(n_windows_fst > 200) %>%
+	mutate(sqrt_euc = sqrt(euc.distance+1)) %>%
+	lm(data = ., recomb_rate_fst~fst*group2)
+
+anova(fit_ecol_bias)
+summary(fit_ecol_bias)
+
+# dxy: distance 
+
+fit_dist_bias_dxy <- all.df %>%
+	filter(n_windows_dxy > 200) %>%
+	mutate(sqrt_euc = sqrt(euc.distance+1)) %>%
+	lm(data = ., recomb_rate_dxy ~ sqrt_euc)
+
+anova(fit_dist_bias_dxy)
+summary(fit_dist_bias_dxy)
+
+# dxy: dxy*ecology
+
+fit_ecol_bias_dxy <- all.df %>%
+	filter(n_windows_dxy > 200) %>%
+	mutate(sqrt_euc = sqrt(euc.distance+1)) %>%
+	lm(data = ., recomb_rate_dxy~fst*group2)
+
+anova(fit_ecol_bias_dxy)
+summary(fit_ecol_bias_dxy)
 
 ##################################
 # Figure S4
@@ -124,6 +167,6 @@ fst_fst <- all.df %>%
 	ylab("Recombination rate vs. \nDxy outlier coeffficient")
 
 
-fig3 <- plot_grid(dist_fst, fst_fst, ncol = 1)
+figs4 <- plot_grid(dist_fst, fst_fst, ncol = 1)
 
-save_plot(fig3, file = "figures/Figure3.pdf", base_height = 8.5, base_width = 8.5)
+save_plot(fig3, file = "figures/FigureS4_raw.pdf", base_height = 8.5, base_width = 8.5)
