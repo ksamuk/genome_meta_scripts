@@ -12,7 +12,6 @@ library("wesanderson")
 library("grid")
 library("gridExtra")
 library("ggthemes")
-library("cowplot")
 
 list.files("shared_functions", full.names = TRUE) %>% sapply(source) %>% invisible()
 
@@ -49,6 +48,22 @@ theme.all <- theme_hc + theme(legend.position="none",
                    strip.background = element_blank(),
                    legend.title = element_blank())
 
+# counts of clustered lgs
+prop.clustered <- cluster.df %>%
+  mutate(more.clustered = nnd.emp.percentile < 0.05) %>%
+  mutate(less.clustered = nnd.emp.percentile > 0.95) %>%
+  mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+  select(comparison, lg, group, group2, more.clustered, less.clustered, group2.new) %>%
+  group_by(group2.new, comparison) %>%
+  summarise(more.clustered = sum(more.clustered), less.clustered = sum(less.clustered), num.lg = sum(lg <= 21)) %>%
+  mutate(more.clustered = more.clustered / num.lg, less.clustered = less.clustered / num.lg) %>%
+  filter(num.lg > 1) %>%
+		plot_dot_line_plot(data = ., group = "group2.new", 
+											 stat = "more.clustered", label = "", 
+											 pal = pal, y_lab = "Prop. chromosomes clustered",
+											 theme_all = theme.all, point_size = point_size, line_size = line_size)
+
+
 # coeff of disp
 coeff.dispersion <- cluster.df %>%
   mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
@@ -60,11 +75,11 @@ coeff.dispersion <- cluster.df %>%
 										 theme_all = theme.all, point_size = point_size, line_size = line_size)
 
 # nnd.diff
+
 nnd.diff <- cluster.df %>%
   mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
   group_by(group2.new, comparison) %>%
-	summarise(nnd.diff.sd = mean(nnd.diff.sd, na.rm = TRUE))%>%
-  #summarise(nnd.diff.sd = mean(nnd.diff.sd, na.rm = TRUE))%>%
+  summarise(nnd.diff.sd = mean(nnd.diff.sd, na.rm = TRUE))%>%
 	filter(!is.na(nnd.diff.sd)) %>%
 	filter(nnd.diff.sd > -4)%>% # filters out one particular impossible value
 	plot_dot_line_plot(data = ., group = "group2.new", 
@@ -72,12 +87,26 @@ nnd.diff <- cluster.df %>%
 										 pal = pal, y_lab = "Expected NND - Outlier NND (cM)",
 										 theme_all = theme.all, point_size = point_size, line_size = line_size)
 
-fig2 <- plot_grid(coeff.dispersion, nnd.diff)
-save_plot(fig2, filename = "figures/Figure2_raw.pdf", base_height = 4.5, base_width = 8.5)
 
 ################################################################################
 # Figure S2 (clustering data, strict)
 ################################################################################
+
+# counts of clustered lgs
+prop.clustered <- cluster.df %>%
+	mutate(more.clustered = nnd.emp.percentile < 0.05) %>%
+	mutate(less.clustered = nnd.emp.percentile > 0.95) %>%
+	mutate(comparison = paste(pop1, ecotype1, pop2, ecotype2, sep = ".")) %>%
+	select(comparison, lg, group, group2, more.clustered, less.clustered, group.new) %>%
+	group_by(group.new, comparison) %>%
+	summarise(more.clustered = sum(more.clustered), less.clustered = sum(less.clustered), num.lg = sum(lg <= 21)) %>%
+	mutate(more.clustered = more.clustered / num.lg, less.clustered = less.clustered / num.lg) %>%
+	filter(num.lg > 1) %>%
+	plot_dot_line_plot(data = ., group = "group.new", 
+										 stat = "more.clustered", label = "", 
+										 pal = pal, y_lab = "Prop. chromosomes clustered",
+										 theme_all = theme.all, point_size = point_size, line_size = line_size)
+
 
 # coeff of disp
 coeff.dispersion <- cluster.df %>%

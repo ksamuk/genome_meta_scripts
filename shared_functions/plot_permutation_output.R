@@ -9,5 +9,6 @@ plot_permutation_output <- function(permutation_output, stat, pal = pal, theme_a
 		scale_fill_manual(values = pal)+
 		theme_all+
 		facet_grid(~group, scales = "free")
+	
 }
 
