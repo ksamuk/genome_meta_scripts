@@ -105,7 +105,7 @@ save_plot(fig3, file = "figures/raw/Figure3_raw.pdf", base_height = 8.5, base_wi
 fit_dist_bias <- all.df %>%
 	filter(n_windows_fst > 200) %>%
 	mutate(sqrt_euc = sqrt(euc.distance+1)) %>%
-	lm(data = ., recomb_rate_fst~sqrt_euc)
+	lm(data = ., recomb_rate_fst~sqrt_euc * ecology)
 
 anova(fit_dist_bias)
 summary(fit_dist_bias)
